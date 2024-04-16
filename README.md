@@ -3,6 +3,15 @@ Vector is a C library that allows you to hold a dynamic number of elements in on
 
 **Vector** is inspired by **std::vector** from the C++'s STL library.
 
+# How to install
+Installing `libvector` is pretty easy. It counts with a CMake config file that sets up everything for you.
+```
+mkdir build
+cmake -G Ninja -S . -B build
+sudo cmake --build build --target install
+```
+Of course you can use another build tool instead of `Ninja` if you want.
+
 # Usage:
 ## StringVector
 Let's imagine you want to store an indefinite number of names. You'd do that like:
@@ -69,6 +78,7 @@ The operations you can perform in a vector, be it `StringVector` or `NumericVect
 That's exactly the same as for `NumericVector`.
 
 When you finish working with `NumericVector` or `StringVector`, you must call: `numeric_vector_free(&numeric_vector)` or `string_vector_free(&string_vector)`.
+
 
 # List of operations you can perform in every vector:
 | Vector        | Operation                                         | Description                                                                                                                   |
