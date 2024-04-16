@@ -3,7 +3,7 @@ Vector is a C library that allows you to hold a dynamic number of elements in on
 
 **Vector** is inspired by **std::vector** from the C++'s STL library.
 
-# How to install
+# Building and Installing LibVector
 Installing `libvector` is pretty easy. It counts with a CMake config file that sets up everything for you.
 ```
 mkdir build
@@ -13,6 +13,17 @@ sudo cmake --build build --target install
 Of course you can use another build tool instead of `Ninja` if you want.
 
 # Usage:
+After installing `libvector`, make sure you:
+```
+#include <vector.h>
+```
+## Compiling and linking your programs against LibVector
+Let's suppose you have all your code in a file `main.c` and you're using `GCC` as your compiler.
+```
+gcc main.c `pkg-config --cflags --libs vector`
+```
+Replace gcc with you compiler.
+
 ## StringVector
 Let's imagine you want to store an indefinite number of names. You'd do that like:
 
