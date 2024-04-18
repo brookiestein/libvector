@@ -56,17 +56,17 @@ To avoid that, `libvector` resizes the `StringVector` to hold 10 strings more, s
 A `StringVector` isn't limited to add one string at a time. Let's imagine you already have an array of names. You can add that array to your `StringVector` as well.
 ```
 char *other_names[] = { "Josefa", "Nidia", "Mon", "Natalie", "Stephanye" };
-string_vector_add_array(&names, other_names);
+string_vector_add_array(&names, other_names, 5);
 ```
 
 In this scenario, `libvector` won't increase the `StringVector` 10 more spaces if it determines the `StringVector` needs to be bigger.
-`libvector` will increase the `StringVector` as many spaces as `other_names` has items inside.
+`libvector` will increase the `StringVector` to hold n more strings.
 
 So, at the end of the day, `names`' size will be 16. Initially 3, later it had to increase 10 more: 13, occupying just 11.
 And adding 5 more strings through `string_vector_add_array()` will make `libvector` to increase `names`' size to adjust itself to be able to hold those 5 more strings, resulting in 16 strings.
 
 If you're in a situation where `libvector` had to increase your `StringVector` to hold 10 more strings, but your `StringVector` is holding, for example, 3 strings, you can
-use `string_vector_shrink()` to tell `libvector` to make its size equal to the items it holds.
+use `string_vector_shrink_to_fit()` to tell `libvector` to make its size equal to the items it holds.
 ### For example:
 ```
 StringVector names;
@@ -75,7 +75,7 @@ string_vector_add(&names, "Alice");
 string_vector_add(&names, "James");
 
 string_vector_print(&names);
-string_vector_shrink(&names);
+string_vector_shrink_to_fit(&names);
 string_vector_print(&names);
 ```
 
@@ -98,12 +98,12 @@ When you finish working with `NumericVector` or `StringVector`, you must call: `
 | StringVector  | string_vector_add(&vector, string)                | Adds `string` to `vector`. Resizes `vector` to hold 10 more strings if needed.                                                |
 | StringVector  | string_vector_add_array(&vector, strings, n)      | Adds array of strings `strings` containing `n` strings to `vector`. Resizes `vector` to hold `n` items more if needed.        |
 | StringVector  | string_vector_free(&vector)                       | Frees `vector`s allocated memory. MUST be called when you're done working with the vector.                                    |
-| StringVector  | string_vector_resize(&vector, spaces)             | Resizes `vector` to hold `spaces` more, in addition to the ones it currently holds.                                           |
-| StringVector  | string_vector_shrink(&vector)                     | Shrinks `vector` to adjust its size the the items it currently holds.                                                         |
+| StringVector  | string_vector_reserve(&vector, spaces)            | Reserves `spaces` more spaces for `vector`, in addition to the ones it currently holds.                                           |
+| StringVector  | string_vector_shrink_to_fit(&vector)              | Shrinks `vector` to adjust its size the the items it currently holds.                                                         |
 | StringVector  | string_vector_print(&vector)                      | Prints all the strings held by `vector`. Also tells how many items are held, and how many items can be held without resizing. |
 | NumericVector | numeric_vector_init(&vector, initial_size         | Initalizes vector to hold `initial_size` items.                                                                               |
 | NumericVector | numeric_vector_add(&vector, number)               | Adds `number` to `vector`. Resizes `vector` to hold 10 more strings if needed.                                                |
-| NumericVector | numeric_vector_resize(&vector, spaces)            | Resizes `vector` to hold `spaces` more, in addition to the ones it currently holds.                                           |
+| NumericVector | numeric_vector_reserve(&vector, spaces)           | Reserves `spaces` more spaces for `vector`, in addition to the ones it currently holds.                                           |
 | NumericVector | numeric_vector_free(&vector)                      | Frees `vector`s allocated memory. MUST be called when you're done working with the vector.                                    |
 | NumericVector | numeric_vector_print(&vector)                     | Prints all the strings held by `vector`. Also tells how many items are held, and how many items can be held without resizing. |
 

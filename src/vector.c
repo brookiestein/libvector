@@ -22,7 +22,7 @@ bool numeric_vector_init(NumericVector *vector, size_t initial_size)
 
     logger(INFO, debug, __func__, __LINE__, "NumericVector: %p initialized with %li spaces.", vector, initial_size);
 
-    vector->size = initial_size;
+    vector->capacity = initial_size;
     vector->offset = 0;
     return true;
 }
@@ -41,11 +41,11 @@ bool numeric_vector_add(NumericVector *vector, double value)
         }
     }
 
-    if (vector->offset + 1 > vector->size) {
+    if (vector->offset + 1 > vector->capacity) {
         logger(INFO, debug, __func__, __LINE__, "Adding new value causes vector to be resized. Resizing with default resize value: %i",
                 DEFAULT_RESIZE_VALUE);
 
-        if (!numeric_vector_resize(vector, DEFAULT_RESIZE_VALUE)) {
+        if (!numeric_vector_reserve(vector, DEFAULT_RESIZE_VALUE)) {
             logger(ERROR, true, __func__, __LINE__, "Impossible to add value: %.2f.", value);
             return false;
         }
@@ -57,42 +57,151 @@ bool numeric_vector_add(NumericVector *vector, double value)
     return true;
 }
 
-bool numeric_vector_resize(NumericVector *vector, size_t spaces)
+bool numeric_vector_add_array(NumericVector *vector, double *numbers, size_t size)
 {
-    size_t old_size = vector->size;
-    size_t new_size = old_size + spaces;
-    double tmp[old_size];
-
-    logger(INFO, debug, __func__, __LINE__, "Resizing vector: %p...\nCurrent size: %li, new size: %li.", vector, old_size, new_size);
-    logger(INFO, debug, __func__, __LINE__, "Saving vector contents to avoid data loss...");
-
-    for (size_t i = 0; i < vector->size; ++i) {
-        tmp[i] = vector->data[i];
-    }
-
-    logger(INFO, debug, __func__, __LINE__, "Vector contents saved. Freeing vector and reinitializing it with the requested size...");
-    numeric_vector_free(vector);
-
-    /* TODO: Implement a way to roll back and leave the original vector as it was received. */
-    if (!numeric_vector_init(vector, new_size)) {
-        logger(ERROR, true, __func__, __LINE__, "Impossible to resize vector. Exiting...");
+    if (!vector->data) {
+        logger(
+                ERROR, true, __func__, __LINE__,
+                "NumericVector: %p isn't properly initialized. Please call numeric_vector_init() before using this function.",
+                vector
+        );
         return false;
     }
 
-    logger(INFO, debug, __func__, __LINE__, "Vector resized. New size is: %li. Restoring saved vector data...", vector->size);
+    if (vector->offset + size > vector->capacity) {
+        logger(
+                INFO, debug, __func__, __LINE__,
+                "Adding array values causes vector to be resized. Resizing to hold %li more numbers.",
+                size);
 
-    for (size_t i = 0; i < old_size; ++i) {
-        numeric_vector_add(vector, tmp[i]); // This operation shouldn't fail, so I'm not checking whether it succeded.
+        if (!numeric_vector_reserve(vector, size)) {
+            logger(
+                    ERROR, true, __func__, __LINE__,
+                    "Impossible to reserve %li more spaces. Not continuing.",
+                    size
+            );
+
+            return false;
+        }
     }
 
-    logger(INFO, debug, __func__, __LINE__, "Vector contents restored successfully.");
+    size_t i;
+    for (i = 0; i < size; ++i) {
+        vector->data[vector->offset] = numbers[i];
+    }
+
+    logger(INFO, debug, __func__, __LINE__, "%li new values were added to NumericVector: %p.", i, vector);
+    return i == size;
+}
+
+bool numeric_vector_reserve(NumericVector *vector, size_t spaces)
+{
+    if (!vector->data) {
+        logger(
+                ERROR, true, __func__, __LINE__,
+                "NumericVector: %p isn't properly initialized. \
+Please call numeric_vector_init() and numeric_vector_add() before using this function.",
+                vector
+        );
+
+        return false;
+    }
+
+    size_t new_capacity = vector->capacity + spaces;
+    logger(
+            INFO, debug, __func__, __LINE__,
+            "Reserving %li more spaces to NumericVector: %p... Current capacity: %li, New capacity: %li.",
+            spaces, vector, vector->capacity, new_capacity
+    );
+
+    NumericVector new_vector;
+    if (!numeric_vector_init(&new_vector, new_capacity)) {
+        logger(
+                ERROR, true, __func__, __LINE__,
+                "Impossible to reserve %li more spaces. Leaving original NumericVector as it was received.",
+                spaces
+        );
+
+        return false;
+    }
+
+    for (size_t i = 0; i < vector->capacity; ++i) {
+        new_vector.data[i] = vector->data[i];
+        ++new_vector.offset;
+    }
+
+    numeric_vector_free(vector);
+    vector->data = new_vector.data;
+    vector->capacity = new_vector.capacity;
+    vector->offset = new_vector.offset;
+
+    logger(
+            INFO, debug, __func__, __LINE__,
+            "%li more spaces reserved to NumericVector: %p.",
+            spaces, vector
+    );
+
+    return true;
+}
+
+bool numeric_vector_shrink_to_fit(NumericVector *vector)
+{
+    if (!vector->data) {
+        logger(
+                ERROR, true, __func__, __LINE__,
+                "NumericVector: %p isn't properly initialized. \
+Please call numeric_vector_init() and numeric_vector_add() before using this function.",
+                vector
+        );
+
+        return false;
+    }
+
+    if (vector->capacity == vector->offset) {
+        logger(WARN, debug, __func__, __LINE__, "No need to shrink NumericVector: %p.", vector);
+        return true;
+    }
+
+    size_t new_capacity = vector->offset;
+
+    logger(
+            INFO, debug, __func__, __LINE__,
+            "Shrinking NumericVector: %p... Current capacity: %li, New capacity: %li.",
+            vector, vector->capacity, new_capacity
+    );
+
+    NumericVector new_vector;
+    if (!numeric_vector_init(&new_vector, new_capacity)) {
+        logger(
+                ERROR, true, __func__, __LINE__,
+                "Impossible to shrink NumericVector: %p. Couldn't make backup of existing data.",
+                vector
+        );
+
+        return false;
+    }
+
+    for (size_t i = 0; i < new_capacity; ++i) {
+        new_vector.data[i] = vector->data[i];
+        ++new_vector.offset;
+    }
+
+    numeric_vector_free(vector);
+    vector->data = new_vector.data;
+    vector->capacity = new_vector.capacity;
+    vector->offset = new_vector.offset;
+
+    logger(
+            INFO, debug, __func__, __LINE__, "NumericVector: %p shrinked. New capacity is %li.",
+            vector, vector->capacity
+    );
 
     return true;
 }
 
 void numeric_vector_free(NumericVector *vector)
 {
-    if (!vector->data && vector->size == 0 && vector->offset == 0) {
+    if (!vector->data && vector->capacity == 0 && vector->offset == 0) {
         logger(ERROR, true, __func__, __LINE__, "No need to free vector.");
         return;
     }
@@ -101,7 +210,7 @@ void numeric_vector_free(NumericVector *vector)
 
     free(vector->data);
     vector->data = NULL;
-    vector->size = 0;
+    vector->capacity = 0;
     vector->offset = 0;
 
     logger(INFO, debug, __func__, __LINE__, "Vector: %p freed.", vector);
@@ -121,13 +230,13 @@ void numeric_vector_print(const NumericVector *vector)
         printf("%.2f%s", vector->data[i], (i < vector->offset - 1 ? ", " : "\n"));
     }
 
-    printf("Vector size: %li\n", vector->size);
-    printf("Vector values: %li\n", vector->offset);
+    printf("Vector capacity: %li\n", vector->capacity);
+    printf("Vector items: %li\n", vector->offset);
 }
 
 bool string_vector_init(StringVector *vector, size_t initial_size)
 {
-    logger(INFO, debug, __func__, __LINE__, "Initializing StringVector with %li bytes.", initial_size);
+    logger(INFO, debug, __func__, __LINE__, "Initializing StringVector with capacity to hold %li strings.", initial_size);
 
     vector->data = (char **) malloc(initial_size * sizeof(char *));
     if (!vector->data) {
@@ -136,16 +245,16 @@ bool string_vector_init(StringVector *vector, size_t initial_size)
     }
 
     vector->item_sizes = (size_t *) malloc(initial_size * sizeof(size_t));
-    if (!vector->item_sizes) {
-        logger(ERROR, true, __func__, __LINE__, "%s: Impossible to allocate memory for string vector.");
+    if (vector->item_sizes == NULL) {
+        logger(ERROR, true, __func__, __LINE__, "%s: Impossible to allocate memory for StringVector.");
         string_vector_free(vector);
         return false;
     }
 
-    vector->vector_size = initial_size;
+    vector->capacity = initial_size;
     vector->offset = 0;
 
-    for (size_t i = 0; i < vector->vector_size; ++i) {
+    for (size_t i = 0; i < vector->capacity; ++i) {
         vector->data[i] = NULL;
     }
 
@@ -159,7 +268,7 @@ void string_vector_free(StringVector *vector)
     logger(INFO, debug, __func__, __LINE__, "Freeing StringVector: %p...", vector);
 
     if (vector->data != NULL) {
-        for (size_t i = 0; i < vector->vector_size; ++i) {
+        for (size_t i = 0; i < vector->capacity; ++i) {
             if (vector->data[i] != NULL) {
                 logger(INFO, debug, __func__, __LINE__, "Freeing StringVector item #%li: %p...", i, vector->data[i]);
                 free(vector->data[i]);
@@ -179,7 +288,7 @@ void string_vector_free(StringVector *vector)
         vector->item_sizes = NULL;
     }
 
-    vector->vector_size = 0;
+    vector->capacity = 0;
     vector->offset = 0;
 
     logger(INFO, debug, __func__, __LINE__, "StringVector: %p freed.", vector);
@@ -226,14 +335,14 @@ bool string_vector_add(StringVector *vector, const char *value)
         }
     }
 
-    if (vector->offset + 1 > vector->vector_size) {
+    if (vector->offset + 1 > vector->capacity) {
         logger(
                 INFO, debug, __func__, __LINE__,
                 "Adding new value causes vector to be resized. Resizing with the default size value: %i",
                 DEFAULT_RESIZE_VALUE
         );
 
-        if (!string_vector_resize(vector, DEFAULT_RESIZE_VALUE)) {
+        if (!string_vector_reserve(vector, DEFAULT_RESIZE_VALUE)) {
             logger(ERROR, true, __func__, __LINE__, "StringVector couldn't be resized. Not continuing.");
             return false;
         }
@@ -242,7 +351,7 @@ bool string_vector_add(StringVector *vector, const char *value)
     size_t size = string_vector_item_strlen(value);
     vector->data[vector->offset] = (char *) malloc((size + 1) * sizeof(char));
 
-    if (!vector->data[vector->offset]) {
+    if (vector->data[vector->offset] == NULL) {
         logger(ERROR, true, __func__, __LINE__, "Impossible to allocate memory for string value: %s. Not adding.", value);
         return false;
     }
@@ -267,10 +376,10 @@ bool string_vector_add_array(StringVector *vector, const char *values[], size_t 
         return false;
     }
 
-    if (vector->offset + n > vector->vector_size) {
+    if (vector->offset + n > vector->capacity) {
         logger(INFO, debug, __func__, __LINE__, "Adding array causes vector to be resized. Resizing with %li more spaces...", n);
 
-        if (!string_vector_resize(vector, n)) {
+        if (!string_vector_reserve(vector, n)) {
             logger(ERROR, true, __func__, __LINE__, "Impossible to resize vector. Not continuing.");
             return false;
         }
@@ -293,96 +402,71 @@ bool string_vector_add_array(StringVector *vector, const char *values[], size_t 
     return i == n;
 }
 
-bool string_vector_resize(StringVector *vector, size_t spaces)
+bool string_vector_reserve(StringVector *vector, size_t spaces)
 {
     if (!vector->data) {
         logger(WARN, true, __func__, __LINE__, "StringVector isn't properly initialized. Not resizing.");
         return false;
     }
 
-    size_t old_size = vector->vector_size;
-    size_t new_size = old_size + spaces;
-    size_t item_sizes[old_size];
-    size_t vector_initial_length = 0;
-    char *tmp[old_size];
+    size_t old_capacity = vector->capacity;
+    size_t new_capacity = old_capacity + spaces;
+    StringVector new_vector;
 
     logger(
             INFO, debug, __func__, __LINE__,
-            "Resizing vector: %p... Current size: %li, new size: %li",
-            vector, old_size, new_size
+            "Reserving %li more spaces for vector: %p... Old capacity: %li, new capacity: %li",
+            spaces, vector, old_capacity, new_capacity
     );
 
-    logger(INFO, debug, __func__, __LINE__, "Saving vector contents to avoid data loss...");
-
-    /*
-     * Back up and restore actual vector items.
-     * If vector size is 10, for example, but its actual contents are just 8, i.e current offset
-     * just back up those 8 instead of trying to access to memory address 9 when it's currently NULL until it's actually used.
-     */
-    size_t stop = new_size < old_size ? new_size : old_size;
-    for (size_t i = 0; i < stop; ++i) {
-        ++vector_initial_length;
-        item_sizes[i] = vector->item_sizes[i];
-        tmp[i] = (char *) malloc((item_sizes[i]) * sizeof(char)); /* item_sizes[i] already takes in account the \0 character. */
-
-        if (tmp[i] == NULL) {
-            logger(
-                    ERROR, true, __func__, __LINE__,
-                    "Error allocating memory to save vector value: %s. Not continuing.",
-                    vector->data[i]
-            );
-            return false;
-        }
-
-        string_vector_copy_item(vector->data[i], tmp[i], item_sizes[i] - 1); /* item_sizes[i] equals to string_vector_strlen() + 1 */
-    }
-
-    logger(
-            INFO, debug, __func__, __LINE__,
-            "Vector contents saved. Freeing vector: %p and reinitializing it with new size: %li...",
-            vector, new_size
-    );
-
-    string_vector_free(vector);
-
-    /* TODO: Roll vector back to its initial state. */
-    if (!string_vector_init(vector, new_size)) {
-        logger(ERROR, true, __func__, __LINE__, "Error initializing vector: %p with new size: %li.", vector, new_size);
+    if (!string_vector_init(&new_vector, new_capacity)) {
+        logger(ERROR, true, __func__, __LINE__, "Impossible to reserve %li more spaces for vector: %p.", spaces, vector);
         return false;
     }
 
-    logger(INFO, debug, __func__, __LINE__, "Restoring vector items...");
+    logger(INFO, debug, __func__, __LINE__, "Saving old StringVector items into new StringVector...");
 
-    size_t i;
-    for (i = 0; i < stop; ++i) {
-        vector->data[vector->offset] = (char *) malloc((item_sizes[i] + 1) * sizeof(char));
-        if (!vector->data[vector->offset]) {
+    for (size_t i = 0; i < vector->offset; ++i) {
+        size_t size = vector->item_sizes[i];
+
+        logger(INFO, debug, __func__, __LINE__, "Allocating memory for StringVector item: %s...", vector->data[i]);
+        new_vector.data[i] = (char *) malloc(size * sizeof(char));
+
+        if (!new_vector.data[i]) {
             logger(
-                    ERROR, true, __func__, __LINE__,
-                    "Impossible to restore vector item: %s. Memory couldn't be allocated.",
-                    tmp[i]
+                    INFO, true, __func__, __LINE__,
+                    "Impossible to allocate memory for StringVector item: %s! Leaving old StringVector as it was received.",
+                    vector->data[i]
             );
-            break;
+
+            string_vector_free(&new_vector);
+            return false;
         }
 
-        string_vector_copy_item(tmp[i], vector->data[vector->offset], item_sizes[i]);
-        ++vector->offset;
+        logger(INFO, debug, __func__, __LINE__, "Memory allocated. Copying StringVector item: %s...", vector->data[i]);
+
+        string_vector_copy_item(vector->data[i], new_vector.data[i], size - 1); // vector->item_sizes[i] has 1 more because of \0
+        new_vector.item_sizes[i] = size;
+        ++new_vector.offset;
+
+        logger(INFO, debug, __func__, __LINE__, "StringVector item: %s copied.", vector->data[i]);
     }
 
-    bool result = i == vector_initial_length;
-    logger(INFO, debug, __func__, __LINE__, "%li values were restored.", i);
+    logger(
+            INFO, debug, __func__, __LINE__,
+            "Freeing old StringVector: %p, and pointing to new StringVector: %p",
+            vector, &new_vector
+    );
 
-    /* If making vector longer, set the remaining items to NULL. */
-    if (vector->vector_size > vector->offset) {
-        for (size_t i = vector->offset; i < vector->vector_size; ++i) {
-            vector->data[i] = NULL;
-        }
-    }
-
-    return result;
+    string_vector_free(vector);
+    vector->data = new_vector.data;
+    vector->item_sizes = new_vector.item_sizes;
+    vector->capacity = new_vector.capacity;
+    vector->offset = new_vector.offset;
+    return true;
 }
 
-bool string_vector_shrink(StringVector *vector)
+bool string_vector_shrink_to_fit(StringVector *vector)
 {
     if (!vector->data) {
         logger(ERROR, true, __func__, __LINE__, "StringVector isn't properly initialized. Please call:");
@@ -393,30 +477,62 @@ bool string_vector_shrink(StringVector *vector)
         return false;
     }
 
-    if (vector->vector_size == vector->offset) {
+    if (vector->capacity == vector->offset) {
         logger(WARN, debug, __func__, __LINE__, "No need to shrink vector: %p.", vector);
         return true;
     }
 
-    size_t old_size = vector->vector_size;
-    size_t new_size = vector->offset;
     logger(
             INFO, debug, __func__, __LINE__,
-            "Shrinking vector: %p... Old size: %li, new size: %li.",
-            vector, old_size, new_size
+            "Shrinking StringVector: %p... Current capacity: %li, New capacity: %li",
+            vector, vector->capacity, vector->offset
     );
 
-    if (!string_vector_resize(vector, -(old_size - new_size))) {
-        logger(ERROR, true, __func__, __LINE__, "Error: Cannot shrink vector: %p. Not continuing.", vector);
+    size_t new_capacity = vector->offset;
+    StringVector new_vector;
+    if (!string_vector_init(&new_vector, new_capacity)) {
+        logger(
+                ERROR, true, __func__, __LINE__,
+                "Impossible to shrink vector: %p. Leaving original vector as it was received."
+        );
         return false;
+    }
+
+    for (size_t i = 0; i < new_capacity; ++i) {
+        logger(INFO, debug, __func__, __LINE__, "Backing up StringVector item: %s...", vector->data[i]);
+        size_t item_size = vector->item_sizes[i];
+        new_vector.data[i] = (char *) malloc(item_size * sizeof(char)); /* item_sizes[i] already takes in account the \0 character. See string_vector_init() */
+
+        if (new_vector.data[i] == NULL) {
+            logger(
+                    ERROR, true, __func__, __LINE__,
+                    "Impossible to backup StringVector item: %s. Leaving original vector as it was received.",
+                    vector->data[i]
+            );
+
+            string_vector_free(&new_vector);
+            return false;
+        }
+
+        string_vector_copy_item(vector->data[i], new_vector.data[i], item_size - 1); /* item_sizes[i] has 1 more space for the \0 character. */
+        ++new_vector.offset;
+
+        logger(INFO, debug, __func__, __LINE__, "StringVector item: %s backed up.", vector->data[i]);
     }
 
     logger(
             INFO, debug, __func__, __LINE__,
-            "StringVector: %p shrinked successfully. New size is: %li.",
-            vector, vector->vector_size
+            "All items in StringVector: %p were backed up. Freeing original vector and making it point to the new one.",
+            vector
     );
 
+    string_vector_free(vector);
+    vector->data = new_vector.data;
+    vector->item_sizes = new_vector.item_sizes;
+    vector->capacity = new_vector.capacity;
+    vector->offset = new_vector.offset;
+
+    logger(INFO, debug, __func__, __LINE__, "StringVector: %p shrinked. New capacity is: %li.", vector, vector->capacity);
     return true;
 }
 
@@ -442,6 +558,6 @@ void string_vector_print(const StringVector *vector)
                 (i < vector->offset - 1 ? ", " : "\n"));
     }
 
-    printf("Vector size: %li\n", vector->vector_size);
-    printf("Vector items: %li\n", vector->offset);
+    printf("StringVector capacity: %li\n", vector->capacity);
+    printf("StringVector items: %li\n", vector->offset);
 }

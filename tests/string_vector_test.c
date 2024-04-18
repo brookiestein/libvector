@@ -4,33 +4,28 @@ int main(void)
 {
     set_debug(true);
 
-    StringVector vector;
-    string_vector_init(&vector, 3);
-
-    string_vector_add(&vector, "Brayan");
-    string_vector_add(&vector, "Stephanye");
-    string_vector_add(&vector, "Nieves");
-
-    printf("\nVector:\n");
-    string_vector_print(&vector);
-    printf("\n");
-
-    const size_t size = 5;
-    const char *other_names[size] = {
-        "Pepe", "Pedrito", "Josefina",
-        "Miguel", "Miguelina"
-    };
-
-    string_vector_add_array(&vector, other_names, size);
+    StringVector names;
+    string_vector_init(&names, 3);
+    string_vector_add(&names, "John");
+    string_vector_add(&names, "Alice");
+    string_vector_add(&names, "Lucy");
 
     printf("\nVector:\n");
-    string_vector_print(&vector);
+    string_vector_print(&names);
     printf("\n");
 
-    string_vector_shrink(&vector);
+    string_vector_add(&names, "James");
+
     printf("\nVector:\n");
-    string_vector_print(&vector);
+    string_vector_print(&names);
     printf("\n");
 
-    string_vector_free(&vector);
+    string_vector_shrink_to_fit(&names);
+
+    printf("\nVector:\n");
+    string_vector_print(&names);
+    printf("\n");
+
+    string_vector_free(&names);
+    return 0;
 }
