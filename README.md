@@ -92,19 +92,25 @@ When you finish working with `NumericVector` or `StringVector`, you must call: `
 
 
 # List of operations you can perform in every vector:
-| Vector        | Operation                                         | Description                                                                                                                   |
-|---------------|---------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------|
-| StringVector  | string_vector_init(&vector, initial_size)         | Initalizes vector to hold `initial_size` items.                                                                               |
-| StringVector  | string_vector_add(&vector, string)                | Adds `string` to `vector`. Resizes `vector` to hold 10 more strings if needed.                                                |
-| StringVector  | string_vector_add_array(&vector, strings, n)      | Adds array of strings `strings` containing `n` strings to `vector`. Resizes `vector` to hold `n` items more if needed.        |
-| StringVector  | string_vector_free(&vector)                       | Frees `vector`s allocated memory. MUST be called when you're done working with the vector.                                    |
-| StringVector  | string_vector_reserve(&vector, spaces)            | Reserves `spaces` more spaces for `vector`, in addition to the ones it currently holds.                                           |
-| StringVector  | string_vector_shrink_to_fit(&vector)              | Shrinks `vector` to adjust its size the the items it currently holds.                                                         |
-| StringVector  | string_vector_print(&vector)                      | Prints all the strings held by `vector`. Also tells how many items are held, and how many items can be held without resizing. |
-| NumericVector | numeric_vector_init(&vector, initial_size         | Initalizes vector to hold `initial_size` items.                                                                               |
-| NumericVector | numeric_vector_add(&vector, number)               | Adds `number` to `vector`. Resizes `vector` to hold 10 more strings if needed.                                                |
-| NumericVector | numeric_vector_reserve(&vector, spaces)           | Reserves `spaces` more spaces for `vector`, in addition to the ones it currently holds.                                           |
-| NumericVector | numeric_vector_free(&vector)                      | Frees `vector`s allocated memory. MUST be called when you're done working with the vector.                                    |
-| NumericVector | numeric_vector_print(&vector)                     | Prints all the strings held by `vector`. Also tells how many items are held, and how many items can be held without resizing. |
-
-`StringVector` has some more operations than `NumericVector`. They're pending to be added to `NumericVector`.
+| Vector type   | Operation                                         | Return type      | Description                                                                                                                   |
+|---------------|---------------------------------------------------|------------------|-------------------------------------------------------------------------------------------------------------------------------|
+| StringVector  | string_vector_init(&vector, initial_size)         | bool             | Initalizes vector to hold `initial_size` items.                                                                               |
+| StringVector  | string_vector_add(&vector, string)                | bool             | Adds `string` to `vector`. Resizes `vector` to hold 10 more strings if needed.                                                |
+| StringVector  | string_vector_add_array(&vector, strings, n)      | bool             | Adds array of strings `strings` containing `n` strings to `vector`. Resizes `vector` to hold `n` items more if needed.        |
+| StringVector  | string_vector_free(&vector)                       | void             | Frees `vector`s allocated memory. MUST be called when you're done working with the vector.                                    |
+| StringVector  | string_vector_reserve(&vector, spaces)            | bool             | Reserves `spaces` more spaces for `vector`, in addition to the ones it currently holds.                                       |
+| StringVector  | string_vector_shrink_to_fit(&vector)              | bool             | Shrinks `vector` to adjust its size the the items it currently holds.                                                         |
+| StringVector  | string_vector_print(&vector)                      | void             | Prints all the strings held by `vector`. Also tells how many items are held, and how many items can be held without resizing. |
+| StringVector  | string_vector_strlen(&vector, item_position)      | size_t           | Returns vector item's length on position `item_position`.                                                                     |
+| StringVector  | string_vector_get_first(&vector)                  | const char *     | Returns first item held by vector.                                                                                            |
+| StringVector  | string_vector_get_at(&vector, item_position)      | const char *     | Returns item on position `item_position` held by vector.                                                                      |
+| StringVector  | string_vector_get_last(&vector)                   | const char *     | Returns last item held by vector.                                                                                             |
+| NumericVector | numeric_vector_init(&vector, initial_size         | bool             | Initalizes vector to hold `initial_size` items.                                                                               |
+| NumericVector | numeric_vector_add(&vector, number)               | bool             | Adds `number` to `vector`. Resizes `vector` to hold 10 more strings if needed.                                                |
+| NumericVector | numeric_vector_add_array(&vector, numbers, n)     | bool             | Adds array of numbers `numbers` containing `n` strings to `vector`. Resizes `vector` to hold `n` items more if needed.        |
+| NumericVector | numeric_vector_reserve(&vector, spaces)           | bool             | Reserves `spaces` more spaces for `vector`, in addition to the ones it currently holds.                                       |
+| NumericVector | numeric_vector_free(&vector)                      | void             | Frees `vector`s allocated memory. MUST be called when you're done working with the vector.                                    |
+| NumericVector | numeric_vector_print(&vector)                     | void             | Prints all the strings held by `vector`. Also tells how many items are held, and how many items can be held without resizing. |
+| NumericVector | numeric_vector_get_first(&vector)                 | double           | Returns first item held by vector.                                                                                            |
+| NumericVector | numeric_vector_get_at(&vector, item_position)     | double           | Returns item on position `item_position` held by vector.                                                                      |
+| NumericVector | numeric_vector_get_last(&vector)                  | double           | Returns last item held by vector.                                                                                             |
