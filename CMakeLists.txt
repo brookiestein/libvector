@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.28)
 
 set(LIBRARY_NAME vector)
-set(PROJECT_VERSION 1.1.0)
+set(PROJECT_VERSION 1.1.1)
 project(${LIBRARY_NAME} VERSION ${PROJECT_VERSION} LANGUAGES C DESCRIPTION "Vector container library.")
 
 add_library(${LIBRARY_NAME} SHARED

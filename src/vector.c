@@ -602,7 +602,7 @@ const char *string_vector_get_last(const StringVector *vector)
 size_t string_vector_strlen(const StringVector *vector, size_t position)
 {
     if (!string_vector_is_valid(vector, __func__, __LINE__, true)) {
-        return -1;
+        return 0;
     }
 
     if (vector->offset == 0) {
@@ -614,7 +614,8 @@ size_t string_vector_strlen(const StringVector *vector, size_t position)
         return 0;
     }
 
-    return vector->item_sizes[position] - 1;
+    size_t length = vector->item_sizes[position];
+    return length == 0 ? length : length - 1;
 }
 
 void string_vector_print(const StringVector *vector)
