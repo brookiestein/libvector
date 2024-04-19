@@ -24,6 +24,12 @@ int main(void)
     numeric_vector_print(&numbers);
     printf("\n");
 
+    printf("1st item on vector is: %.2f\n", numeric_vector_get_first(&numbers));
+    printf("2nd item on vector is: %.2f\n", numeric_vector_get_at(&numbers, 1));
+    printf("5th item on vector is: %.2f?\n", numeric_vector_get_at(&numbers, 4));
+    printf("Last item on vector is: %.2f\n", numeric_vector_get_last(&numbers));
+    printf("\n");
+
     numeric_vector_free(&numbers);
     return 0;
 }

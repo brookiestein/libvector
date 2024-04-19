@@ -27,12 +27,30 @@ bool numeric_vector_init(NumericVector *vector, size_t initial_size)
     return true;
 }
 
+static bool numeric_vector_is_valid(const NumericVector *vector, const char *func, int line, bool show_suggestions)
+{
+    char suggestion[] = "Please call numeric_vector_init() before using this function.";
+
+    if (vector->data == NULL) {
+        logger(
+                ERROR, true, func, line,
+                "NumericVector: %p isn't properly initialized.%s",
+                vector,
+                (show_suggestions ? suggestion : "")
+        );
+
+        return false;
+    }
+
+    return true;
+}
+
 bool numeric_vector_add(NumericVector *vector, double value)
 {
     logger(INFO, debug, __func__, __LINE__, "Adding value: %.2f to vector: %p...", value, vector);
 
-    if (!vector->data) {
-        logger(WARN, debug, __func__, __LINE__, "NumericVector isn't properly initialized. Initializing it with the default value: %i.",
+    if (!numeric_vector_is_valid(vector, __func__, __LINE__, false)) {
+        logger(WARN, debug, __func__, __LINE__, "Initializing it with the default value: %i.",
                 DEFAULT_RESIZE_VALUE);
 
         if (!numeric_vector_init(vector, DEFAULT_RESIZE_VALUE)) {
@@ -59,12 +77,7 @@ bool numeric_vector_add(NumericVector *vector, double value)
 
 bool numeric_vector_add_array(NumericVector *vector, double *numbers, size_t size)
 {
-    if (!vector->data) {
-        logger(
-                ERROR, true, __func__, __LINE__,
-                "NumericVector: %p isn't properly initialized. Please call numeric_vector_init() before using this function.",
-                vector
-        );
+    if (!numeric_vector_is_valid(vector, __func__, __LINE__, true)) {
         return false;
     }
 
@@ -88,6 +101,7 @@ bool numeric_vector_add_array(NumericVector *vector, double *numbers, size_t siz
     size_t i;
     for (i = 0; i < size; ++i) {
         vector->data[vector->offset] = numbers[i];
+        ++vector->offset;
     }
 
     logger(INFO, debug, __func__, __LINE__, "%li new values were added to NumericVector: %p.", i, vector);
@@ -96,14 +110,7 @@ bool numeric_vector_add_array(NumericVector *vector, double *numbers, size_t siz
 
 bool numeric_vector_reserve(NumericVector *vector, size_t spaces)
 {
-    if (!vector->data) {
-        logger(
-                ERROR, true, __func__, __LINE__,
-                "NumericVector: %p isn't properly initialized. \
-Please call numeric_vector_init() and numeric_vector_add() before using this function.",
-                vector
-        );
-
+    if (!numeric_vector_is_valid(vector, __func__, __LINE__, true)) {
         return false;
     }
 
@@ -146,14 +153,7 @@ Please call numeric_vector_init() and numeric_vector_add() before using this fun
 
 bool numeric_vector_shrink_to_fit(NumericVector *vector)
 {
-    if (!vector->data) {
-        logger(
-                ERROR, true, __func__, __LINE__,
-                "NumericVector: %p isn't properly initialized. \
-Please call numeric_vector_init() and numeric_vector_add() before using this function.",
-                vector
-        );
-
+    if (!numeric_vector_is_valid(vector, __func__, __LINE__, true)) {
         return false;
     }
 
@@ -216,13 +216,38 @@ void numeric_vector_free(NumericVector *vector)
     logger(INFO, debug, __func__, __LINE__, "Vector: %p freed.", vector);
 }
 
-void numeric_vector_print(const NumericVector *vector)
+/* numeric_vector_get_* set of functions return -1 on failure, e.g., position >= vector bounds. */
+double numeric_vector_get_first(const NumericVector *vector)
 {
-    if (!vector->data) {
+    return numeric_vector_get_at(vector, 0);
+}
+
+double numeric_vector_get_at(const NumericVector *vector, size_t position)
+{
+    if (!numeric_vector_is_valid(vector, __func__, __LINE__, true)) {
+        return -1;
+    }
+
+    if (position >= vector->offset) {
         logger(
                 ERROR, true, __func__, __LINE__,
-                "Vector isn't properly initialized. Please call int_vector_init() and int_vector_add() before using this function."
-        );
+                "NumericVector: %p doesn't have any value on position: %li.",
+                vector, position);
+
+        return -1;
+    }
+
+    return vector->data[position];
+}
+
+double numeric_vector_get_last(const NumericVector *vector)
+{
+    return numeric_vector_get_at(vector, vector->offset - 1);
+}
+
+void numeric_vector_print(const NumericVector *vector)
+{
+    if (!numeric_vector_is_valid(vector, __func__, __LINE__, true)) {
         return;
     }
 
@@ -259,6 +284,24 @@ bool string_vector_init(StringVector *vector, size_t initial_size)
     }
 
     logger(INFO, debug, __func__, __LINE__, "Vector: %p initialized with %li spaces.", vector, initial_size);
+
+    return true;
+}
+
+static bool string_vector_is_valid(const StringVector *vector, const char *func, int line, bool show_suggestions)
+{
+    char suggestion[] = "Please call string_vector_init() before using this function.";
+
+    if (vector->data == NULL) {
+        logger(
+                ERROR, true, func, line,
+                "StringVector: %p isn't properly initialized.%s",
+                vector,
+                (show_suggestions ? suggestion : "")
+        );
+
+        return false;
+    }
 
     return true;
 }
@@ -325,8 +368,8 @@ bool string_vector_add(StringVector *vector, const char *value)
 {
     logger(INFO, debug, __func__, __LINE__, "Adding value: %s to vector: %p...", value, vector);
 
-    if (!vector->data) {
-        logger(WARN, debug, __func__, __LINE__, "StringVector isn't properly initialized. Initializing it with the default size value: %i.",
+    if (!string_vector_is_valid(vector, __func__, __LINE__, false)) {
+        logger(WARN, debug, __func__, __LINE__, "Initializing it with the default size value: %i.",
                 DEFAULT_RESIZE_VALUE);
 
         if (!string_vector_init(vector, DEFAULT_RESIZE_VALUE)) {
@@ -367,12 +410,7 @@ bool string_vector_add(StringVector *vector, const char *value)
 
 bool string_vector_add_array(StringVector *vector, const char *values[], size_t n)
 {
-    if (!vector->data) {
-        logger(
-                ERROR, true, __func__, __LINE__,
-                "String Vector: %p isn't properly initialized. Please call string_vector_init() before using this function.",
-                vector
-        );
+    if (!string_vector_is_valid(vector, __func__, __LINE__, true)) {
         return false;
     }
 
@@ -404,8 +442,7 @@ bool string_vector_add_array(StringVector *vector, const char *values[], size_t 
 
 bool string_vector_reserve(StringVector *vector, size_t spaces)
 {
-    if (!vector->data) {
-        logger(WARN, true, __func__, __LINE__, "StringVector isn't properly initialized. Not resizing.");
+    if (!string_vector_is_valid(vector, __func__, __LINE__, true)) {
         return false;
     }
 
@@ -468,12 +505,7 @@ bool string_vector_reserve(StringVector *vector, size_t spaces)
 
 bool string_vector_shrink_to_fit(StringVector *vector)
 {
-    if (!vector->data) {
-        logger(ERROR, true, __func__, __LINE__, "StringVector isn't properly initialized. Please call:");
-        logger(
-                ERROR, true, __func__, __LINE__,
-                "string_vector_init() and string_vector_add()/string_vector_add_array() before using this function."
-        );
+    if (!string_vector_is_valid(vector, __func__, __LINE__, true)) {
         return false;
     }
 
@@ -514,6 +546,7 @@ bool string_vector_shrink_to_fit(StringVector *vector)
             return false;
         }
 
+        new_vector.item_sizes[i] = item_size;
         string_vector_copy_item(vector->data[i], new_vector.data[i], item_size - 1); /* item_sizes[i] has 1 more space for the \0 character. */
         ++new_vector.offset;
 
@@ -534,6 +567,54 @@ bool string_vector_shrink_to_fit(StringVector *vector)
 
     logger(INFO, debug, __func__, __LINE__, "StringVector: %p shrinked. New capacity is: %li.", vector, vector->capacity);
     return true;
+}
+
+/* string_vector_get_* set of functions return NULL on failure, e.g., position >= vector bounds. */
+const char *string_vector_get_first(const StringVector *vector)
+{
+    return string_vector_get_at(vector, 0);
+}
+
+const char *string_vector_get_at(const StringVector *vector, size_t position)
+{
+    if (!string_vector_is_valid(vector, __func__, __LINE__, true)) {
+        return NULL;
+    }
+
+    if (position >= vector->offset) {
+        logger(
+                ERROR, true, __func__, __LINE__,
+                "StringVector: %p doesn't have any value on position: %li.",
+                vector, position
+        );
+
+        return NULL;
+    }
+
+    return vector->data[position];
+}
+
+const char *string_vector_get_last(const StringVector *vector)
+{
+    return string_vector_get_at(vector, vector->offset - 1);
+}
+
+size_t string_vector_strlen(const StringVector *vector, size_t position)
+{
+    if (!string_vector_is_valid(vector, __func__, __LINE__, true)) {
+        return -1;
+    }
+
+    if (vector->offset == 0) {
+        logger(
+                WARN, debug, __func__, __LINE__,
+                "StringVector has no string. Consider using string_vector_add{,_array}() before using this function."
+        );
+
+        return 0;
+    }
+
+    return vector->item_sizes[position] - 1;
 }
 
 void string_vector_print(const StringVector *vector)
