@@ -24,6 +24,14 @@ gcc main.c `pkg-config --cflags --libs vector`
 ```
 Replace gcc with you compiler.
 
+If you're using CMake in your project, you can also find `libvector` with the `find_package` CMake command, for example:
+```
+find_package(Vector REQUIRED)
+add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
+target_link_libraries(${PROJECT_NAME} vector)
+```
+Notice the capital 'V' in the `find_package` command, and the lower 'v' in the `target_link_libraries` command!
+
 ## StringVector
 Let's imagine you want to store an indefinite number of names. You'd do that like:
 
