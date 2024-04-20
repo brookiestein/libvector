@@ -1,0 +1,6 @@
+get_filename_component(_dir "${CMAKE_CURRENT_LIST_FILE}" PATH)
+get_filename_component(_prefix "${_dir}/../.." ABSOLUTE)
+
+include("${_prefix}/@CMAKE_INSTALL_LIBDIR@/vector-@PROJECT_VERSION@/vector-targets.cmake")
+
+set(vector_INCLUDE_DIRS "${_prefix}/include/vector-@PROJECT_VERSION@")

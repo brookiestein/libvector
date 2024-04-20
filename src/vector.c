@@ -1,6 +1,7 @@
 #include "vector.h"
 #include "logger.h"
 
+#include <errno.h>
 #include <stdlib.h>
 
 bool debug = false;
@@ -16,7 +17,12 @@ bool numeric_vector_init(NumericVector *vector, size_t initial_size)
 
     vector->data = (double *) malloc(initial_size * sizeof(double));
     if (vector->data == NULL) {
-        logger(ERROR, true, __func__, __LINE__, "Impossible to allocate %li bytes of memory for vector: %p.", initial_size, vector);
+        logger(
+                ERROR, true, __func__, __LINE__,
+                "Impossible to allocate %li bytes of memory for vector: %p. Error code: %i",
+                initial_size, vector, errno
+        );
+
         return false;
     }
 
@@ -265,13 +271,23 @@ bool string_vector_init(StringVector *vector, size_t initial_size)
 
     vector->data = (char **) malloc(initial_size * sizeof(char *));
     if (!vector->data) {
-        logger(ERROR, true, __func__, __LINE__, "Impossible to initialize string vector with size: %li.", initial_size);
+        logger(
+                ERROR, true, __func__, __LINE__,
+                "Impossible to initialize string vector with size: %li. Error code: %i",
+                initial_size, errno
+        );
+
         return false;
     }
 
     vector->item_sizes = (size_t *) malloc(initial_size * sizeof(size_t));
     if (vector->item_sizes == NULL) {
-        logger(ERROR, true, __func__, __LINE__, "%s: Impossible to allocate memory for StringVector.");
+        logger(
+                ERROR, true, __func__, __LINE__,
+                "Impossible to allocate memory for StringVector. Error code: %i",
+                errno
+        );
+
         string_vector_free(vector);
         return false;
     }
@@ -395,7 +411,12 @@ bool string_vector_add(StringVector *vector, const char *value)
     vector->data[vector->offset] = (char *) malloc((size + 1) * sizeof(char));
 
     if (vector->data[vector->offset] == NULL) {
-        logger(ERROR, true, __func__, __LINE__, "Impossible to allocate memory for string value: %s. Not adding.", value);
+        logger(
+                ERROR, true, __func__, __LINE__,
+                "Impossible to allocate memory for string value: %s. Error code: %i",
+                value, errno
+        );
+
         return false;
     }
 
@@ -472,8 +493,8 @@ bool string_vector_reserve(StringVector *vector, size_t spaces)
         if (!new_vector.data[i]) {
             logger(
                     INFO, true, __func__, __LINE__,
-                    "Impossible to allocate memory for StringVector item: %s! Leaving old StringVector as it was received.",
-                    vector->data[i]
+                    "Impossible to allocate memory for StringVector item: %s! Error code: %i. Leaving old StringVector as it was received.",
+                    vector->data[i], errno
             );
 
             string_vector_free(&new_vector);
@@ -538,8 +559,8 @@ bool string_vector_shrink_to_fit(StringVector *vector)
         if (new_vector.data[i] == NULL) {
             logger(
                     ERROR, true, __func__, __LINE__,
-                    "Impossible to backup StringVector item: %s. Leaving original vector as it was received.",
-                    vector->data[i]
+                    "Impossible to backup StringVector item: %s. Error code: %i. Leaving original vector as it was received.",
+                    vector->data[i], errno
             );
 
             string_vector_free(&new_vector);
