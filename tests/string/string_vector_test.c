@@ -1,5 +1,7 @@
 #include "vector.h"
 
+#include <stdlib.h>
+
 int main(void)
 {
     // set_debug(true);
@@ -74,6 +76,42 @@ int main(void)
     printf("[TEST]: Getting 5th item from StringVector: %s?\n", string_vector_get_at(&names, 4));
     printf("[TEST]: Getting 5th item's length: %li.\n", string_vector_strlen(&names, 4));
     printf("[TEST]: Getting last item from StringVector: %s.\n", string_vector_get_last(&names));
+
+    printf("[TEST]: Pop-ing StringVector.\n");
+    char *last = string_vector_pop(&names);
+
+    if (last != NULL) {
+        printf("[TEST]: Passed!\n");
+        printf("Pop-ed item: %s.\n", last);
+        free(last);
+    } else {
+        printf("[TEST]: Failed!\n");
+    }
+
+    printf("[TEST]: Printing StringVector.\n");
+    string_vector_print(&names);
+
+    printf("[TEST]: Adding fourth string to StringVector (again).\n");
+    if (string_vector_add(&names, "Phil")) {
+        printf("[TEST]: Passed!\n");
+    } else {
+        fprintf(stderr, "[TEST]: Failed!\n");
+        string_vector_free(&names);
+        return 1;
+    }
+
+    printf("[TEST]: Printing StringVector.\n");
+    string_vector_print(&names);
+
+    printf("[TEST]: Clearing vector.\n");
+    if (string_vector_clear(&names)) {
+        printf("[TEST]: Passed!\n");
+    } else {
+        printf("[TEST]: Failed!\n");
+    }
+
+    printf("[TEST]: Printing StringVector.\n");
+    string_vector_print(&names);
 
     string_vector_free(&names);
     return 0;

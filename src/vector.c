@@ -4,11 +4,16 @@
 #include <errno.h>
 #include <stdlib.h>
 
-bool debug = false;
+static bool debug = false;
 
 void set_debug(bool value)
 {
     debug = value;
+}
+
+const char *libvector_version(void)
+{
+    return "libvector v"LIBVECTOR_VERSION;
 }
 
 bool numeric_vector_init(NumericVector *vector, size_t initial_size)
@@ -31,6 +36,23 @@ bool numeric_vector_init(NumericVector *vector, size_t initial_size)
     vector->capacity = initial_size;
     vector->offset = 0;
     return true;
+}
+
+void numeric_vector_free(NumericVector *vector)
+{
+    if (!vector->data && vector->capacity == 0 && vector->offset == 0) {
+        logger(ERROR, true, __func__, __LINE__, "No need to free vector.");
+        return;
+    }
+
+    logger(INFO, debug, __func__, __LINE__, "Freeing vector: %p...", vector);
+
+    free(vector->data);
+    vector->data = NULL;
+    vector->capacity = 0;
+    vector->offset = 0;
+
+    logger(INFO, debug, __func__, __LINE__, "Vector: %p freed.", vector);
 }
 
 static bool numeric_vector_is_valid(const NumericVector *vector, const char *func, int line, bool show_suggestions)
@@ -205,21 +227,38 @@ bool numeric_vector_shrink_to_fit(NumericVector *vector)
     return true;
 }
 
-void numeric_vector_free(NumericVector *vector)
+bool numeric_vector_clear(NumericVector *vector)
 {
-    if (!vector->data && vector->capacity == 0 && vector->offset == 0) {
-        logger(ERROR, true, __func__, __LINE__, "No need to free vector.");
-        return;
+    if (!numeric_vector_is_valid(vector, __func__, __LINE__, true)) {
+        return false;
     }
 
-    logger(INFO, debug, __func__, __LINE__, "Freeing vector: %p...", vector);
+    size_t capacity = vector->capacity;
+    numeric_vector_free(vector);
 
-    free(vector->data);
-    vector->data = NULL;
-    vector->capacity = 0;
-    vector->offset = 0;
+    if (!numeric_vector_init(vector, capacity)) {
+        logger(
+                WARN, true, __func__, __LINE__,
+                "NumericVector: %p was cleared, but it wasn't possible to initialize. It shouldn't be used until properly initialized.",
+                vector
+        );
+    }
 
-    logger(INFO, debug, __func__, __LINE__, "Vector: %p freed.", vector);
+    return true;
+}
+
+/* Take out and return last item on vector or -1 on failure. */
+double numeric_vector_pop(NumericVector *vector)
+{
+    if (!numeric_vector_is_valid(vector, __func__, __LINE__, true) || vector->offset == 0) {
+        return -1;
+    }
+
+    size_t index = vector->offset - 1;
+    double value = vector->data[index];
+    vector->data[index] = -1;
+    --vector->offset;
+    return value;
 }
 
 /* numeric_vector_get_* set of functions return -1 on failure, e.g., position >= vector bounds. */
@@ -588,6 +627,40 @@ bool string_vector_shrink_to_fit(StringVector *vector)
 
     logger(INFO, debug, __func__, __LINE__, "StringVector: %p shrinked. New capacity is: %li.", vector, vector->capacity);
     return true;
+}
+
+bool string_vector_clear(StringVector *vector)
+{
+    if (!string_vector_is_valid(vector, __func__, __LINE__, true)) {
+        return false;
+    }
+
+    size_t capacity = vector->capacity;
+    string_vector_free(vector);
+
+    if (!string_vector_init(vector, capacity)) {
+        logger(
+                WARN, true, __func__, __LINE__,
+                "StringVector: %p was cleared, but it wasn't possible to re-initialize. It shouldn't be used until properly initialized.",
+                vector
+        );
+    }
+
+    return true;
+}
+
+/* Returns the last heap-allocated string. Remember to free() it! */
+char *string_vector_pop(StringVector *vector)
+{
+    if (!string_vector_is_valid(vector, __func__, __LINE__, true) || vector->offset == 0) {
+        return NULL;
+    }
+
+    size_t index = vector->offset - 1;
+    char *last = vector->data[index];
+    vector->data[index] = NULL;
+    --vector->offset;
+    return last;
 }
 
 /* string_vector_get_* set of functions return NULL on failure, e.g., position >= vector bounds. */
