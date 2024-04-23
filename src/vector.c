@@ -247,6 +247,86 @@ bool numeric_vector_clear(NumericVector *vector)
     return true;
 }
 
+bool numeric_vector_copy(const NumericVector *source, NumericVector *destination, bool initialize)
+{
+    logger(
+            INFO, debug, __func__, __LINE__,
+            "Copying NumericVector: %p's values into NumericVector: %p...",
+            source, destination
+    );
+
+    if (!numeric_vector_is_valid(source, __func__, __LINE__, true)) {
+        return false;
+    }
+
+    if (initialize) {
+        if (!numeric_vector_init(destination, source->capacity)) {
+            logger(
+                    ERROR, true, __func__, __LINE__,
+                    "NumericVector: %p couldn't be initialized. Can't make copy from NumericVector: %p.",
+                    destination, source
+            );
+
+            return false;
+        }
+    } else if (destination->data == NULL) {
+        logger(
+                ERROR, true, __func__, __LINE__,
+                "NumericVector: %p isn't properly initialized, and you told me not to initialize it. Not continuing.",
+                destination
+        );
+
+        return false;
+    }
+
+    /* If initialized == true, there's no need to check if source->offset >= destination->capacity
+     * because we already know destination will have space for holding source->offset elements.
+     */
+    if (initialize == false && (destination->offset + source->offset > destination->capacity)) {
+        logger(
+                INFO, debug, __func__, __LINE__,
+                "Copying NumericVector: %p into: NumericVector: %p makes NumericVector: %p to be resized.",
+                source, destination, destination
+        );
+
+        if (!numeric_vector_reserve(destination, source->offset)) {
+            logger(
+                    ERROR, true, __func__, __LINE__,
+                    "Impossible to reserve %li more spaces for copying NumericVector: %p into NumericVector: %p. Not continuing.",
+                    source->offset, source, destination
+            );
+
+            if (initialize) {
+                numeric_vector_free(destination);
+            }
+
+            return false;
+        }
+    }
+
+    for (size_t i = 0; i < source->offset; ++i) {
+        destination->data[destination->offset] = source->data[i];
+        ++destination->offset;
+    }
+
+    logger(
+            INFO, debug, __func__, __LINE__,
+            "NumericVector: %p copied into NumericVector: %p.",
+            source, destination
+    );
+
+    return true;
+}
+
+size_t numeric_vector_get_capacity(const NumericVector *vector)
+{
+    if (!numeric_vector_is_valid(vector, __func__, __LINE__, true)) {
+        return 0;
+    }
+
+    return vector->capacity;
+}
+
 /* Take out and return last item on vector or -1 on failure. */
 double numeric_vector_pop(NumericVector *vector)
 {
@@ -647,6 +727,15 @@ bool string_vector_clear(StringVector *vector)
     }
 
     return true;
+}
+
+size_t string_vector_get_capacity(const StringVector *vector)
+{
+    if (!string_vector_is_valid(vector, __func__, __LINE__, true)) {
+        return 0;
+    }
+
+    return vector->capacity;
 }
 
 /* Returns the last heap-allocated string. Remember to free() it! */

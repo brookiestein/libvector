@@ -25,9 +25,11 @@ void set_debug(bool value);
 bool numeric_vector_init(NumericVector *vector, size_t initial_size);
 void numeric_vector_free(NumericVector *vector);
 bool numeric_vector_add(NumericVector *vector, double value);
+bool numeric_vector_add_array(NumericVector *vector, double *values, size_t n);
 bool numeric_vector_reserve(NumericVector *vector, size_t spaces); /* With spaces I mean, e.g., 1 space = 4 bytes */
 bool numeric_vector_shrink_to_fit(NumericVector *vector);
 bool numeric_vector_clear(NumericVector *vector);
+bool numeric_vector_copy(const NumericVector *source, NumericVector *destination, bool initialize);
 size_t numeric_vector_get_capacity(const NumericVector *vector);
 double numeric_vector_pop(NumericVector *vector);
 double numeric_vector_get_first(const NumericVector *vector);

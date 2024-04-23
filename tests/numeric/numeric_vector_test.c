@@ -104,7 +104,42 @@ int main(void)
     printf("[TEST]: Printing vector.\n");
     numeric_vector_print(&numbers);
 
-    printf("[TEST]: Clearning vector.\n");
+    printf("[TEST]: Copying uninitialized vector.\n");
+    NumericVector copy;
+    if (numeric_vector_copy(&numbers, &copy, true)) {
+        printf("[TEST]: Passed!\n");
+        printf("[TEST]: Printing vector.\n");
+        numeric_vector_print(&copy);
+        numeric_vector_free(&copy);
+    } else {
+        fprintf(stderr, "[TEST]: Failed!\n");
+    }
+
+    printf("[TEST]: Copying initialized vector, but forcing it to be resized.\n");
+    NumericVector copy2;
+    if (numeric_vector_init(&copy2, 3)) {
+        printf("[TEST]: Filling vector.\n");
+        numeric_vector_add(&copy2, 75);
+        numeric_vector_add(&copy2, 10);
+        numeric_vector_add(&copy2, 30);
+        printf("[TEST]: Printing vector.\n");
+        numeric_vector_print(&copy2);
+
+        printf("[TEST]: Making copy of first vector.\n");
+        if (numeric_vector_copy(&numbers, &copy2, false)) {
+            printf("[TEST]: Passed!\n");
+            printf("[TEST]: Printing vector.\n");
+            numeric_vector_print(&copy2);
+        } else {
+            fprintf(stderr, "[TEST]: Failed!\n");
+        }
+
+        numeric_vector_free(&copy2);
+    } else {
+        printf("[TEST]: Failed! Couldn't allocate memory.\n");
+    }
+
+    printf("[TEST]: Clearing vector.\n");
     if (numeric_vector_clear(&numbers)) {
         printf("[TEST]: Passed!\n");
     } else {
