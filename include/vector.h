@@ -21,7 +21,7 @@ typedef struct {
 
 const char *libvector_version(void);
 
-void set_debug(bool value);
+void libvector_set_debug(bool value);
 bool numeric_vector_init(NumericVector *vector, size_t initial_size);
 void numeric_vector_free(NumericVector *vector);
 bool numeric_vector_add(NumericVector *vector, double value);

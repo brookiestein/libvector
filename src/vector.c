@@ -6,7 +6,7 @@
 
 static bool debug = false;
 
-void set_debug(bool value)
+void libvector_set_debug(bool value)
 {
     debug = value;
 }
@@ -808,6 +808,7 @@ bool string_vector_copy(const StringVector *source, StringVector *destination, b
     for (size_t i = 0; i < source->offset; ++i) {
         size_t size = source->item_sizes[i];
         const char *item = source->data[i];
+        copy.item_sizes[i] = size;
 
         logger(
                 INFO, debug, __func__, __LINE__,
