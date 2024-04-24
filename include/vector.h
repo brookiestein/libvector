@@ -44,6 +44,7 @@ bool string_vector_add_array(StringVector *vector, const char *array[], size_t n
 bool string_vector_reserve(StringVector *vector, size_t spaces); /* With spaces I mean, e.g., 1 space = 1 byte. */
 bool string_vector_shrink_to_fit(StringVector *vector);
 bool string_vector_clear(StringVector *vector);
+bool string_vector_copy(const StringVector *source, StringVector *destination, bool initialize);
 size_t string_vector_get_capacity(const StringVector *vector);
 char *string_vector_pop(StringVector *vector);
 const char *string_vector_get_first(const StringVector *vector);

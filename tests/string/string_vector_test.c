@@ -102,6 +102,43 @@ int main(void)
     printf("[TEST]: Printing StringVector.\n");
     string_vector_print(&names);
 
+    printf("[TEST]: Copying StringVector into an uninitialized one.\n");
+    StringVector copy;
+    if (string_vector_copy(&names, &copy, true)) {
+        printf("[TEST]: Passed!\n");
+        printf("[TEST]: Printing StringVector.\n");
+        string_vector_print(&copy);
+        string_vector_free(&copy);
+    } else {
+        printf("[TEST]: Failed!\n");
+    }
+
+    printf("[TEST]: Copying StringVector into an initialized one.\n");
+    StringVector copy2;
+    if (string_vector_init(&copy2, 3)) {
+        char name1[] = "Joseph";
+        char name2[] = "Ninia";
+        char name3[] = "Frank";
+
+        printf("[TEST]: Filling StringVector with values: %s, %s, and %s.\n", name1, name2, name3);
+        string_vector_add(&copy2, name1);
+        string_vector_add(&copy2, name2);
+        string_vector_add(&copy2, name3);
+        printf("[TEST]: Copying StringVector.\n");
+
+        if (string_vector_copy(&names, &copy2, false)) {
+            printf("[TEST]: Passed!\n");
+            printf("[TEST]: Printing StringVector.\n");
+            string_vector_print(&copy2);
+        } else {
+            printf("[TEST]: Failed!\n");
+        }
+
+        string_vector_free(&copy2);
+    } else {
+        printf("[TEST]: Failed! Couldn't initialize StringVector.\n");
+    }
+
     printf("[TEST]: Clearing vector.\n");
     if (string_vector_clear(&names)) {
         printf("[TEST]: Passed!\n");

@@ -729,6 +729,121 @@ bool string_vector_clear(StringVector *vector)
     return true;
 }
 
+bool string_vector_copy(const StringVector *source, StringVector *destination, bool initialize)
+{
+    if (!string_vector_is_valid(source, __func__, __LINE__, true)) {
+        return false;
+    }
+
+    StringVector copy;
+
+    if (initialize) {
+        if (!string_vector_init(&copy, source->capacity)) {
+            logger(
+                    ERROR, true, __func__, __LINE__,
+                    "Impossible to initialize StringVector: %p. Not continuing.",
+                    destination
+            );
+
+            return false;
+        }
+    } else if (!string_vector_is_valid(destination, __func__, __LINE__, false)) {
+        logger(
+                ERROR, true, __func__, __LINE__,
+                "You told me not to initialize it. Not continuing."
+        );
+
+        return false;
+    }
+
+    if (initialize == false && (source->offset + destination->offset > destination->capacity)) {
+        logger(
+                INFO, debug, __func__, __LINE__,
+                "Copying StringVector: %p values into initialized StringVector: %p makes this last one to be resized.",
+                source, destination
+        );
+
+        /* Initialize temporal StringVector to hold both destination and source's values. */
+        if (!string_vector_init(&copy, destination->capacity + source->offset)) {
+            logger(
+                    ERROR, true, __func__, __LINE__,
+                    "Impossible to reserve memory to make copy of StringVector: %p into StringVector: %p.",
+                    source, destination
+            );
+
+            return false;
+        }
+
+        logger(INFO, debug, __func__, __LINE__, "Backing up StringVector: %p's values...", destination);
+        for (size_t i = 0; i < destination->offset; ++i) {
+            const char *item = destination->data[i];
+            logger(INFO, debug, __func__, __LINE__, "Backing up StringVector item #%li: %s...", i, item);
+
+            size_t size = destination->item_sizes[i];
+            copy.item_sizes[i] = size;
+            copy.data[i] = (char *) malloc(size);
+
+            if (copy.data[i] == NULL) {
+                logger(
+                        ERROR, true, __func__, __LINE__,
+                        "Impossible to back up StringVector #%li: %s. Leaving original StringVector as it was received.",
+                        i, item
+                );
+
+                string_vector_free(&copy);
+                return false;
+            }
+
+            string_vector_copy_item(item, copy.data[i], size - 1); /* Just copy the items themselves, last byte will be for \0. */
+            ++copy.offset;
+        }
+    }
+
+    logger(
+            INFO, debug, __func__, __LINE__,
+            "Copying StringVector: %p's values into StringVector: %p...",
+            source, destination
+    );
+
+    for (size_t i = 0; i < source->offset; ++i) {
+        size_t size = source->item_sizes[i];
+        const char *item = source->data[i];
+
+        logger(
+                INFO, debug, __func__, __LINE__,
+                "Reserving %li bytes to make copy of StringVector item #%li: %s...",
+                (size - 1), i, item
+        );
+
+        copy.data[copy.offset] = (char *) malloc(size);
+        if (copy.data[copy.offset] == NULL) {
+            logger(
+                    ERROR, true, __func__, __LINE__,
+                    "Impossible to reserve memory for StringVector item #%li: %s. Leaving original StringVector as it was received.",
+                    i, item
+            );
+
+            string_vector_free(&copy);
+            return false;
+        }
+
+        string_vector_copy_item(item, copy.data[copy.offset], size - 1); /* Just copy the items themselves, last byte will be for \0. */
+        ++copy.offset;
+    }
+
+    if (initialize == false) {
+        string_vector_free(destination);
+    }
+
+    destination->data = copy.data;
+    destination->capacity = copy.capacity;
+    destination->item_sizes = copy.item_sizes;
+    destination->offset = copy.offset;
+
+    logger(INFO, debug, __func__, __LINE__, "StringVector: %p's values copied into StringVector: %p.", source, destination);
+    return true;
+}
+
 size_t string_vector_get_capacity(const StringVector *vector)
 {
     if (!string_vector_is_valid(vector, __func__, __LINE__, true)) {
