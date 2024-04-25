@@ -1,9 +1,10 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <vector.h>
 
 int main(void)
 {
-    // set_debug(true);
+    printf("Running %s.\n", libvector_version());
 
     StringVector names;
     printf("[TEST]: Initializing StringVector with spaces to hold 3 strings.\n");
@@ -137,6 +138,32 @@ int main(void)
         string_vector_free(&copy2);
     } else {
         printf("[TEST]: Failed! Couldn't initialize StringVector.\n");
+    }
+
+    const char *value = "Moscow";
+    size_t position = 3;
+    printf("[TEST]: Inserting value: %s at position: %li.\n", value, position);
+    printf("[TEST]: Printing StringVector before inserting.\n");
+    string_vector_print(&names);
+    if (string_vector_insert(&names, value, position)) {
+        printf("[TEST]: Passed!\n");
+        printf("[TEST]: Printing StringVector.\n");
+        string_vector_print(&names);
+    } else {
+        fprintf(stderr, "[TEST]: Failed!\n");
+    }
+
+    value = "China";
+    position = 2;
+    printf("[TEST]: Inserting value: %s at position: %li.\n", value, position);
+    printf("[TEST]: Printing StringVector before inserting.\n");
+    string_vector_print(&names);
+    if (string_vector_insert(&names, value, position)) {
+        printf("[TEST]: Passed!\n");
+        printf("[TEST]: Printing StringVector.\n");
+        string_vector_print(&names);
+    } else {
+        fprintf(stderr, "[TEST]: Failed!\n");
     }
 
     printf("[TEST]: Clearing vector.\n");

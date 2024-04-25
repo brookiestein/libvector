@@ -1,8 +1,9 @@
+#include <errno.h>
+#include <math.h>
+#include <stdlib.h>
+
 #include "vector.h"
 #include "logger.h"
-
-#include <errno.h>
-#include <stdlib.h>
 
 static bool debug = false;
 
@@ -314,6 +315,92 @@ bool numeric_vector_copy(const NumericVector *source, NumericVector *destination
             "NumericVector: %p copied into NumericVector: %p.",
             source, destination
     );
+
+    return true;
+}
+
+bool numeric_vector_insert(NumericVector *vector, double value, size_t position)
+{
+    /* position - vector->offset will always result in at least -1,
+     * so it's perfectly safe to store it in a size_t.
+     */
+    size_t to_move = abs(position - vector->offset);
+
+    logger(
+            INFO, debug, __func__, __LINE__,
+            "Inserting new value: %.2f into NumericVector: %p at position: %li... Values to shift right after inserting: %li.",
+            value, vector, position, to_move
+    );
+
+
+    if (!numeric_vector_is_valid(vector, __func__, __LINE__, true)) {
+        return false;
+    }
+
+    if (position >= vector->offset) {
+        logger(
+                WARN, debug, __func__, __LINE__,
+                "NumericVector: %p doesn't have at least %li elements. Just adding at position: %li... No shift needed.",
+                vector, position, vector->offset
+        );
+
+        return numeric_vector_add(vector, value);
+    }
+
+    if (vector->offset + 1 > vector->capacity) {
+        logger(
+                INFO, debug, __func__, __LINE__,
+                "Inserting new value makes NumericVector to be resized. Reserving %i more spaces...",
+                DEFAULT_RESIZE_VALUE
+        );
+
+        if (!numeric_vector_reserve(vector, DEFAULT_RESIZE_VALUE)) {
+            logger(
+                    ERROR, true, __func__, __LINE__,
+                    "Impossible to reserve %i more spaces. Leaving original NumericVector as it was received.",
+                    DEFAULT_RESIZE_VALUE
+            );
+
+            return false;
+        }
+    }
+
+    size_t pos = position;
+    double current = vector->data[position];
+
+    logger(
+            INFO, debug, __func__, __LINE__,
+            "Backing up item: %.2f and setting %.2f into its position...",
+            current, value
+    );
+
+    vector->data[position] = value;
+    logger(INFO, debug, __func__, __LINE__, "Value: %.2f set at position: %li.", value, position);
+
+    for (size_t i = 0; i < to_move; ++i) {
+        ++pos;
+        double next = 0;
+
+        if (pos == vector->offset) {
+            vector->data[pos] = current;
+            logger(INFO, debug, __func__, __LINE__, "Value: %.2f set at position: %li.", current, pos);
+            logger(INFO, debug, __func__, __LINE__, "There isn't any more item to back up.");
+        } else {
+            next = vector->data[pos];
+            logger(INFO, debug, __func__, __LINE__, "Backing up item: %.2f and setting %.2f into its position...", next, current);
+            vector->data[pos] = current;
+            logger(INFO, debug, __func__, __LINE__, "Value: %.2f set at position: %li.", current, pos);
+            current = next;
+        }
+    }
+
+    logger(
+            INFO, debug, __func__, __LINE__,
+            "Value: %.2f inserted into NumericVector: %p at position: %li.",
+            value, vector, position
+    );
+
+    ++vector->offset;
 
     return true;
 }
@@ -842,6 +929,118 @@ bool string_vector_copy(const StringVector *source, StringVector *destination, b
     destination->offset = copy.offset;
 
     logger(INFO, debug, __func__, __LINE__, "StringVector: %p's values copied into StringVector: %p.", source, destination);
+    return true;
+}
+
+bool string_vector_insert(StringVector *vector, const char *value, size_t position)
+{
+    logger(
+            INFO, debug, __func__, __LINE__,
+            "Inserting new value: %s into StringVector: %p at position: %li...",
+            value, vector, position
+    );
+
+    if (!string_vector_is_valid(vector, __func__, __LINE__, true)) {
+        return false;
+    }
+
+    if (position >= vector->offset) {
+        logger(
+                WARN, debug, __func__, __LINE__,
+                "StringVector: %p doesn't have at least %li elements. Just adding at position: %li...",
+                vector, position, vector->offset
+        );
+
+        return string_vector_add(vector, value);
+    }
+
+    StringVector tmp;
+
+    if (vector->offset + 1 > vector->capacity) {
+        logger(
+                INFO, debug, __func__, __LINE__,
+                "Inserting new value makes StringVector to be resized. Reserving %i more spaces...",
+                DEFAULT_RESIZE_VALUE
+        );
+
+        if (!string_vector_init(&tmp, vector->capacity + DEFAULT_RESIZE_VALUE)) {
+            logger(
+                    ERROR, true, __func__, __LINE__,
+                    "Impossible to reserve %i more spaces. Leaving original StringVector as it was received.",
+                    DEFAULT_RESIZE_VALUE
+            );
+
+            return false;
+        }
+    } else {
+        if (!string_vector_init(&tmp, vector->capacity)) {
+            logger(
+                    ERROR, true, __func__, __LINE__,
+                    "Impossible to back up StringVector: %p. Leaving it untouched.",
+                    vector
+            );
+
+            return false;
+        }
+    }
+
+    size_t j = 0; // j will be used to iterate over vector. i will be used to iterate over tmp.
+    for (size_t i = 0; i <= vector->offset; ++i) {
+        const char *to_copy = NULL;
+
+        if (i == position) {
+            size_t length = string_vector_item_strlen(value) + 1;
+            tmp.item_sizes[i] = length;
+            tmp.data[i] = (char *) malloc(length * sizeof(char));
+
+            if (tmp.data[i] == NULL) {
+                logger(
+                        ERROR, true, __func__, __LINE__,
+                        "Couldn't reserve memory for StringVector item: %s. Leaving original StringVector as it was received. Error code: %i",
+                        value, errno
+                );
+
+                string_vector_free(&tmp);
+                return false;
+            }
+
+            to_copy = value;
+        } else {
+            size_t length = vector->item_sizes[j];
+            tmp.item_sizes[i] = length;
+            tmp.data[i] = (char *) malloc(length); // item_sizes[i] already takes in account the \0 character.
+
+            if (tmp.data[i] == NULL) {
+                logger(
+                        ERROR, true, __func__, __LINE__,
+                        "Couldn't reserve memory for StringVector item: %s. Leaving original StringVector as it was received. Error code: %i",
+                        vector->data[j], errno
+                );
+
+                string_vector_free(&tmp);
+                return false;
+            }
+
+            to_copy = vector->data[j];
+            ++j;
+        }
+
+        string_vector_copy_item(to_copy, tmp.data[i], tmp.item_sizes[i] - 1);
+        ++tmp.offset;
+    }
+
+    string_vector_free(vector);
+    vector->data = tmp.data;
+    vector->item_sizes = tmp.item_sizes;
+    vector->capacity = tmp.capacity;
+    vector->offset = tmp.offset;
+
+    logger(
+            INFO, debug, __func__, __LINE__,
+            "Value: %s inserted into StringVector: %p at position: %li.",
+            value, vector, position
+    );
+
     return true;
 }
 

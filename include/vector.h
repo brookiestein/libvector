@@ -30,6 +30,7 @@ bool numeric_vector_reserve(NumericVector *vector, size_t spaces); /* With space
 bool numeric_vector_shrink_to_fit(NumericVector *vector);
 bool numeric_vector_clear(NumericVector *vector);
 bool numeric_vector_copy(const NumericVector *source, NumericVector *destination, bool initialize);
+bool numeric_vector_insert(NumericVector *vector, double value, size_t position);
 size_t numeric_vector_get_capacity(const NumericVector *vector);
 double numeric_vector_pop(NumericVector *vector);
 double numeric_vector_get_first(const NumericVector *vector);
@@ -45,6 +46,7 @@ bool string_vector_reserve(StringVector *vector, size_t spaces); /* With spaces 
 bool string_vector_shrink_to_fit(StringVector *vector);
 bool string_vector_clear(StringVector *vector);
 bool string_vector_copy(const StringVector *source, StringVector *destination, bool initialize);
+bool string_vector_insert(StringVector *vector, const char *value, size_t position);
 size_t string_vector_get_capacity(const StringVector *vector);
 char *string_vector_pop(StringVector *vector);
 const char *string_vector_get_first(const StringVector *vector);

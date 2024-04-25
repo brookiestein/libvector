@@ -1,8 +1,9 @@
-#include "vector.h"
+#include <stdio.h>
+#include <vector.h>
 
 int main(void)
 {
-    // set_debug(true);
+    printf("Running %s.\n", libvector_version());
 
     NumericVector numbers;
     printf("[TEST]: Initializing NumericVector to hold 3 numbers.\n");
@@ -138,6 +139,47 @@ int main(void)
     } else {
         printf("[TEST]: Failed! Couldn't allocate memory.\n");
     }
+
+    double value = 79;
+    size_t position = 3;
+    printf("[TEST]: Inserting value %.2f at position %li.\n", value, position);
+    printf("[TEST]: Printing vector before inserting.\n");
+    numeric_vector_print(&numbers);
+    if (numeric_vector_insert(&numbers, value, position)) {
+        printf("[TEST]: Passed!\n");
+        printf("[TEST]: Printing vector.\n");
+        numeric_vector_print(&numbers);
+    } else {
+        fprintf(stderr, "[TEST]: Failed!\n");
+    }
+
+    value = 150;
+    position = 0;
+    printf("[TEST]: Inserting value %.2f at position %li.\n", value, position);
+    printf("[TEST]: Printing vector before inserting.\n");
+    numeric_vector_print(&numbers);
+    if (numeric_vector_insert(&numbers, value, position)) {
+        printf("[TEST]: Passed!\n");
+        printf("[TEST]: Printing vector.\n");
+        numeric_vector_print(&numbers);
+    } else {
+        fprintf(stderr, "[TEST]: Failed!\n");
+    }
+
+    value = 100;
+    position = 20;
+    printf("[TEST]: Inserting value %.2f at position %li.\n", value, position);
+    printf("[TEST]: Printing vector before inserting.\n");
+    numeric_vector_print(&numbers);
+    libvector_set_debug(true);
+    if (numeric_vector_insert(&numbers, value, position)) {
+        printf("[TEST]: Passed!\n");
+        printf("[TEST]: Printing vector.\n");
+        numeric_vector_print(&numbers);
+    } else {
+        fprintf(stderr, "[TEST]: Failed!\n");
+    }
+    libvector_set_debug(false);
 
     printf("[TEST]: Clearing vector.\n");
     if (numeric_vector_clear(&numbers)) {
