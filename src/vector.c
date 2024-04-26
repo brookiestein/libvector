@@ -405,6 +405,35 @@ bool numeric_vector_insert(NumericVector *vector, double value, size_t position)
     return true;
 }
 
+bool numeric_vector_replace(NumericVector *vector, size_t position, double new_value)
+{
+    if (!numeric_vector_is_valid(vector, __func__, __LINE__, true)) {
+        return false;
+    }
+
+    if (position >= vector->offset) {
+        logger(
+                ERROR, true, __func__, __LINE__,
+                "There's no such NumericVector item at position: %li.",
+                position
+        );
+
+        return false;
+    }
+
+    logger(
+            INFO, debug, __func__, __LINE__,
+            "Replacing NumericVector item: %.2f at position: %li with %.2f...",
+            vector->data[position], position, new_value
+    );
+
+    double old_value = vector->data[position];
+    vector->data[position] = new_value;
+
+    logger(INFO, debug, __func__, __LINE__, "Value: %.2f replaced by: %.2f.\n", old_value, new_value);
+    return true;
+}
+
 size_t numeric_vector_get_capacity(const NumericVector *vector)
 {
     if (!numeric_vector_is_valid(vector, __func__, __LINE__, true)) {
@@ -1041,6 +1070,56 @@ bool string_vector_insert(StringVector *vector, const char *value, size_t positi
             value, vector, position
     );
 
+    return true;
+}
+
+bool string_vector_replace(StringVector *vector, size_t position, const char *new_value)
+{
+    if (!string_vector_is_valid(vector, __func__, __LINE__, true)) {
+        return false;
+    }
+
+    if (position >= vector->offset) {
+        logger(
+                ERROR, true, __func__, __LINE__,
+                "There's no such StringVector item at position: %li.",
+                position
+        );
+
+        return false;
+    }
+
+    size_t size = string_vector_item_strlen(new_value) + 1;
+
+    logger(
+            INFO, debug, __func__, __LINE__,
+            "Reserving %li bytes of memory to copy: %s into StringVector position: %li, replacing: %s.",
+            size, new_value, position, vector->data[position]
+    );
+
+    char *value = (char *) malloc(size * sizeof(char));
+
+    if (value == NULL) {
+        logger(
+                ERROR, true, __func__, __LINE__,
+                "Couldn't reserve memory to hold new StringVector item: %s. Can't continue.",
+                new_value
+        );
+
+        return false;
+    }
+
+    char *old_value = vector->data[position];
+    string_vector_copy_item(new_value, value, size - 1);
+    vector->data[position] = value; /* Just make that pointer point to the new memory address. */
+
+    logger(
+            INFO, debug, __func__, __LINE__,
+            "StringVector item: %s replaced by %s. Freeing replaced StringVector item allocated memory...",
+            old_value, value
+    );
+
+    free(old_value);
     return true;
 }
 
