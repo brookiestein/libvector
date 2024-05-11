@@ -1198,6 +1198,93 @@ bool string_vector_replace(StringVector *vector, size_t position, const char *ne
     return true;
 }
 
+bool string_vector_erase(StringVector *vector, size_t start, size_t length)
+{
+    if (!string_vector_is_valid(vector, __func__, __LINE__, true)) {
+        return false;
+    }
+
+    if (start >= vector->offset) {
+        logger(
+                ERROR, true, __func__, __LINE__,
+                "StringVector: %p doesn't have %li items. There's nothing to erase.",
+                vector, start
+        );
+
+        return false;
+    }
+
+    if (length >= vector->offset) {
+        length = 1;
+    }
+
+    const char *item_text = length == 1 ? "item" : "items";
+
+    logger(
+            INFO, debug, __func__, __LINE__,
+            "Erasing %li StringVector %s, starting from %li...",
+            length, item_text, start
+    );
+
+    size_t new_capacity = vector->capacity - length;
+    StringVector tmp;
+    if (!string_vector_init(&tmp, new_capacity)) {
+        logger(
+                ERROR, true, __func__, __LINE__,
+                "Couldn't back up StringVector: %p's items. Can't proceed.",
+                vector
+        );
+
+        return false;
+    }
+
+    /* Just back up items that won't be erased. */
+    for (size_t i = 0, j = 0; i < vector->offset; ++i) {
+        size_t copy_after = abs(j - (i + 1));
+
+        if (i < start || copy_after > length) {
+            const char *item = vector->data[i];
+            tmp.data[j] = (char *) malloc(vector->item_sizes[i]);
+
+            if (tmp.data[j] == NULL) {
+                logger(
+                        ERROR, true, __func__, __LINE__,
+                        "Impossible to back up StringVector item: %s. Can't proceed.",
+                        item
+                );
+
+                string_vector_free(&tmp);
+                return false;
+            }
+
+            string_vector_copy_item(item, tmp.data[j], vector->item_sizes[i] - 1);
+            tmp.item_sizes[j] = vector->item_sizes[i];
+            ++tmp.offset;
+            ++j;
+
+            logger(
+                    INFO, debug, __func__, __LINE__,
+                    "StringVector item: %s left untouched.",
+                    item
+            );
+        }
+    }
+
+    string_vector_free(vector);
+    vector->capacity = tmp.capacity;
+    vector->data = tmp.data;
+    vector->item_sizes = tmp.item_sizes;
+    vector->offset = tmp.offset;
+
+    logger(
+            INFO, debug, __func__, __LINE__,
+            "%li %s %s erased from StringVector: %p.",
+            length, item_text, (length == 1 ? "was" : "were"), vector
+    );
+
+    return true;
+}
+
 size_t string_vector_get_capacity(const StringVector *vector)
 {
     if (!string_vector_is_valid(vector, __func__, __LINE__, true)) {

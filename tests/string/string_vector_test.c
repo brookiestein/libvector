@@ -166,6 +166,25 @@ int main(void)
         fprintf(stderr, "[TEST]: Failed!\n");
     }
 
+    size_t start = 3;
+    size_t length = 3;
+    printf("[TEST]: Erasing %li items starting from %li.\n", length, start);
+    printf("[TEST]: Shrinking StringVector first...\n");
+    if (string_vector_shrink_to_fit(&names)) {
+        printf("[TEST]: Passed!\n");
+        printf("[TEST]: Printing StringVector.\n");
+        string_vector_print(&names);
+        if (string_vector_erase(&names, start, length)) {
+            printf("[TEST] (Erasing): Passed!\n");
+            printf("[TEST]: Printing StringVector.\n");
+            string_vector_print(&names);
+        } else {
+            fprintf(stderr, "[TEST]: Failed!\n");
+        }
+    } else {
+        fprintf(stderr, "[TEST]: Shrink failed. Can't proceed!\n");
+    }
+
     printf("[TEST]: Clearing vector.\n");
     if (string_vector_clear(&names)) {
         printf("[TEST]: Passed!\n");

@@ -50,6 +50,7 @@ bool string_vector_clear(StringVector *vector);
 bool string_vector_copy(const StringVector *source, StringVector *destination, bool initialize);
 bool string_vector_insert(StringVector *vector, const char *value, size_t position);
 bool string_vector_replace(StringVector *vector, size_t position, const char *new_value);
+bool string_vector_erase(StringVector *vector, size_t start, size_t length);
 size_t string_vector_get_capacity(const StringVector *vector);
 char *string_vector_pop(StringVector *vector);
 const char *string_vector_get_first(const StringVector *vector);

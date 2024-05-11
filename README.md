@@ -36,14 +36,19 @@ Notice the capital 'V' in the `find_package` command, and the lower 'v' in the `
 Let's imagine you want to store an indefinite number of names. You'd do that like:
 
 ```
-StringVector names;
+StringVector names = {0};
 string_vector_add(&names, "John");
 string_vector_add(&names, "Alie");
 string_vector_add(&names, "Josh");
 ```
 
-Here, because you haven't explicitly initialized the vector. It's automatically initialized to hold, by default, 10 strings.
+Here, because you haven't explicitly initialized the vector with `string_vector_init()`, it's automatically initialized to hold, by default, 10 strings.
 But that isn't limited to that, let's add 8 strings more. That would give us a total of 11 strings, but we just have memory for 10, right?
+
+Also, please notice the way the StringVector is declared: `StringVector names = {0}`. 
+**This is strictly necessary because if you don't declared it that way, bad things could and will happen!**
+
+You can use `= {0}` or `= {NULL}`, I prefer the former rather than the latter because of simplicity, but use whatever you're comfortable with.
 
 ```
 string_vector_add(&names, "James");
