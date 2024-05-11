@@ -32,6 +32,7 @@ bool numeric_vector_clear(NumericVector *vector);
 bool numeric_vector_copy(const NumericVector *source, NumericVector *destination, bool initialize);
 bool numeric_vector_insert(NumericVector *vector, double value, size_t position);
 bool numeric_vector_replace(NumericVector *vector, size_t position, double new_value);
+bool numeric_vector_erase(NumericVector *vector, size_t start, size_t length);
 size_t numeric_vector_get_capacity(const NumericVector *vector);
 double numeric_vector_pop(NumericVector *vector);
 double numeric_vector_get_first(const NumericVector *vector);

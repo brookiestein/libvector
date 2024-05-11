@@ -181,6 +181,17 @@ int main(void)
     }
     libvector_set_debug(false);
 
+    size_t start = 3;
+    size_t length = 3;
+    printf("[TEST]: Erasing %li NumericVector items starting at %li...\n", length, start);
+    if (numeric_vector_erase(&numbers, start, length)) {
+        printf("[TEST]: Passed!\n");
+        printf("[TEST]: Printing vector.\n");
+        numeric_vector_print(&numbers);
+    } else {
+        fprintf(stderr, "[TEST]: Failed!\n");
+    }
+
     printf("[TEST]: Clearing vector.\n");
     if (numeric_vector_clear(&numbers)) {
         printf("[TEST]: Passed!\n");

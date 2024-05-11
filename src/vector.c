@@ -62,7 +62,7 @@ static bool numeric_vector_is_valid(const NumericVector *vector, const char *fun
 
     if (vector->data == NULL) {
         logger(
-                ERROR, true, func, line,
+                WARN, show_suggestions, func, line,
                 "NumericVector: %p isn't properly initialized.%s",
                 vector,
                 (show_suggestions ? suggestion : "")
@@ -431,6 +431,80 @@ bool numeric_vector_replace(NumericVector *vector, size_t position, double new_v
     vector->data[position] = new_value;
 
     logger(INFO, debug, __func__, __LINE__, "Value: %.2f replaced by: %.2f.\n", old_value, new_value);
+    return true;
+}
+
+/* Erase NumericVector's items from start to length or vector's last item.
+ * Reducing NumericVector's capacity by the amount of erased items.
+ */
+bool numeric_vector_erase(NumericVector *vector, size_t start, size_t length)
+{
+    if (!numeric_vector_is_valid(vector, __func__, __LINE__, true)) {
+        return false;
+    }
+
+    if (start >= vector->offset) {
+        logger(
+                ERROR, true, __func__, __LINE__,
+                "NumericVector: %p doesn't have %li items. There's nothing to erase.",
+                vector, (start == vector->offset ? start + 1 : start)
+        );
+
+        return false;
+    }
+
+    if (length >= vector->offset) {
+        length = 1;
+    }
+
+    const char *item_text = length == 1 ? "item" : "items";
+
+    logger(
+            INFO, debug, __func__, __LINE__,
+            "Erasing %li NumericVector %s starting from %li.",
+            length, item_text, start
+    );
+
+    size_t new_capacity = vector->capacity - length;
+    NumericVector tmp;
+    if (!numeric_vector_init(&tmp, new_capacity)) {
+        logger(
+                ERROR, true, __func__, __LINE__,
+                "Couldn't back up NumericVector: %p's items. Can't continue.",
+                vector
+        );
+
+        return false;
+    }
+
+    /* Just back up items that won't be erased. */
+    for (size_t i = 0, j = 0; i < vector->offset; ++i) {
+        size_t copy_after = abs(j - (i + 1));
+
+        if (i < start || copy_after > length) {
+            logger(
+                    INFO, debug, __func__, __LINE__,
+                    "NumericVector item: %.2f left untouched.",
+                    vector->data[i]
+            );
+
+            tmp.data[j] = vector->data[i];
+            ++tmp.offset;
+            ++j;
+        }
+    }
+
+    numeric_vector_free(vector);
+    vector->data = tmp.data;
+    vector->capacity = tmp.capacity;
+    vector->offset = tmp.offset;
+
+    logger(
+            INFO, debug, __func__, __LINE__,
+            "%li %s %s erased from NumericVector: %p.",
+            length, item_text, (length == 1 ? "was" : "were"), vector
+    );
+
     return true;
 }
 
@@ -1112,6 +1186,7 @@ bool string_vector_replace(StringVector *vector, size_t position, const char *ne
     char *old_value = vector->data[position];
     string_vector_copy_item(new_value, value, size - 1);
     vector->data[position] = value; /* Just make that pointer point to the new memory address. */
+    vector->item_sizes[position] = size;
 
     logger(
             INFO, debug, __func__, __LINE__,

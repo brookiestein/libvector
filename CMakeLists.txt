@@ -1,12 +1,14 @@
 cmake_minimum_required(VERSION 3.28)
 
 set(LIBRARY_NAME vector)
-set(PROJECT_VERSION 1.7.0)
+set(PROJECT_VERSION 1.8.0)
 project(${LIBRARY_NAME} VERSION ${PROJECT_VERSION} LANGUAGES C DESCRIPTION "Vector container library.")
 
 add_compile_definitions(LIBVECTOR_VERSION="${PROJECT_VERSION}")
 
 add_library(${LIBRARY_NAME} SHARED
+    include/logger.h
+    include/vector.h
     src/logger.c
     src/vector.c)
 
