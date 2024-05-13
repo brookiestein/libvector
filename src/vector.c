@@ -150,7 +150,7 @@ bool numeric_vector_reserve(NumericVector *vector, size_t spaces)
             spaces, vector, vector->capacity, new_capacity
     );
 
-    NumericVector new_vector;
+    NumericVector new_vector = {0};
     if (!numeric_vector_init(&new_vector, new_capacity)) {
         logger(
                 ERROR, true, __func__, __LINE__,
@@ -199,7 +199,7 @@ bool numeric_vector_shrink_to_fit(NumericVector *vector)
             vector, vector->capacity, new_capacity
     );
 
-    NumericVector new_vector;
+    NumericVector new_vector = {0};
     if (!numeric_vector_init(&new_vector, new_capacity)) {
         logger(
                 ERROR, true, __func__, __LINE__,
@@ -466,7 +466,7 @@ bool numeric_vector_erase(NumericVector *vector, size_t start, size_t length)
     );
 
     size_t new_capacity = vector->capacity - length;
-    NumericVector tmp;
+    NumericVector tmp = {0};
     if (!numeric_vector_init(&tmp, new_capacity)) {
         logger(
                 ERROR, true, __func__, __LINE__,
@@ -503,6 +503,71 @@ bool numeric_vector_erase(NumericVector *vector, size_t start, size_t length)
             INFO, debug, __func__, __LINE__,
             "%li %s %s erased from NumericVector: %p.",
             length, item_text, (length == 1 ? "was" : "were"), vector
+    );
+
+    return true;
+}
+
+bool numeric_vector_swap(NumericVector *one, NumericVector *another)
+{
+    if (!numeric_vector_is_valid(one, __func__, __LINE__, true)
+        || !numeric_vector_is_valid(another, __func__, __LINE__, true))
+    {
+        return false;
+    }
+
+    logger(INFO, debug, __func__, __LINE__, "Backing up NumericVector: %p and %p items...", one, another);
+
+    NumericVector onebak = {0};
+    NumericVector anotherbak = {0};
+
+    if (!numeric_vector_copy(one, &onebak, true)) {
+        logger(
+                ERROR, true, __func__, __LINE__,
+                "Couldn't back up NumericVector: %p's items. Can't proceed.",
+                one
+        );
+
+        numeric_vector_free(&onebak);
+        return false;
+    }
+
+    if (!numeric_vector_copy(another, &anotherbak, true)) {
+        logger(
+                ERROR, true, __func__, __LINE__,
+                "Couldn't back up NumericVector: %p's items. Can't proceed.",
+                another
+        );
+
+        numeric_vector_free(&onebak);
+        numeric_vector_free(&anotherbak);
+        return false;
+    }
+
+    logger(INFO, debug, __func__, __LINE__, "Swapping items held by NumericVector: %p and %p...", one, another);
+    numeric_vector_free(one);
+    numeric_vector_free(another);
+
+    one->data = anotherbak.data;
+    one->capacity = anotherbak.capacity;
+    one->offset = anotherbak.offset;
+
+    another->data = onebak.data;
+    another->capacity = onebak.capacity;
+    another->offset = onebak.offset;
+
+    logger(
+            INFO, debug, __func__, __LINE__,
+            "NumericVectors: %p and %p were swapped.",
+            one, another
+    );
+
+    logger(
+            INFO, debug, __func__, __LINE__,
+            "NumericVector: %p old capacity: %li, new capacity: %li, \
+NumericVector: %p old capacity: %li, new capacity: %li.",
+            one, another->capacity, one->capacity,
+            another, one->capacity, another->capacity
     );
 
     return true;
@@ -778,7 +843,7 @@ bool string_vector_reserve(StringVector *vector, size_t spaces)
 
     size_t old_capacity = vector->capacity;
     size_t new_capacity = old_capacity + spaces;
-    StringVector new_vector;
+    StringVector new_vector = {0};
 
     logger(
             INFO, debug, __func__, __LINE__,
@@ -851,7 +916,7 @@ bool string_vector_shrink_to_fit(StringVector *vector)
     );
 
     size_t new_capacity = vector->offset;
-    StringVector new_vector;
+    StringVector new_vector = {0};
     if (!string_vector_init(&new_vector, new_capacity)) {
         logger(
                 ERROR, true, __func__, __LINE__,
@@ -925,7 +990,7 @@ bool string_vector_copy(const StringVector *source, StringVector *destination, b
         return false;
     }
 
-    StringVector copy;
+    StringVector copy = {0};
 
     if (initialize) {
         if (!string_vector_init(&copy, source->capacity)) {
@@ -1057,7 +1122,7 @@ bool string_vector_insert(StringVector *vector, const char *value, size_t positi
         return string_vector_add(vector, value);
     }
 
-    StringVector tmp;
+    StringVector tmp = {0};
 
     if (vector->offset + 1 > vector->capacity) {
         logger(
@@ -1227,7 +1292,7 @@ bool string_vector_erase(StringVector *vector, size_t start, size_t length)
     );
 
     size_t new_capacity = vector->capacity - length;
-    StringVector tmp;
+    StringVector tmp = {0};
     if (!string_vector_init(&tmp, new_capacity)) {
         logger(
                 ERROR, true, __func__, __LINE__,
@@ -1280,6 +1345,73 @@ bool string_vector_erase(StringVector *vector, size_t start, size_t length)
             INFO, debug, __func__, __LINE__,
             "%li %s %s erased from StringVector: %p.",
             length, item_text, (length == 1 ? "was" : "were"), vector
+    );
+
+    return true;
+}
+
+bool string_vector_swap(StringVector *one, StringVector *another)
+{
+    if (!string_vector_is_valid(one, __func__, __LINE__, true)
+        || !string_vector_is_valid(another, __func__, __LINE__, true))
+    {
+        return false;
+    }
+
+    logger(INFO, debug, __func__, __LINE__, "Backing up StringVector: %p and %p items...", one, another);
+
+    StringVector onebak = {0};
+    StringVector anotherbak = {0};
+
+    if (!string_vector_copy(one, &onebak, true)) {
+        logger(
+                ERROR, true, __func__, __LINE__,
+                "Couldn't back up StringVector: %p's items. Can't proceed.",
+                one
+        );
+
+        string_vector_free(&onebak);
+        return false;
+    }
+
+    if (!string_vector_copy(another, &anotherbak, true)) {
+        logger(
+                ERROR, true, __func__, __LINE__,
+                "Couldn't back up StringVector: %p's items. Can't proceed.",
+                another
+        );
+
+        string_vector_free(&onebak);
+        string_vector_free(&anotherbak);
+        return false;
+    }
+
+    logger(INFO, debug, __func__, __LINE__, "Swapping items held by StringVector: %p and %p...", one, another);
+    string_vector_free(one);
+    string_vector_free(another);
+
+    one->data = anotherbak.data;
+    one->capacity = anotherbak.capacity;
+    one->item_sizes = anotherbak.item_sizes;
+    one->offset = anotherbak.offset;
+
+    another->data = onebak.data;
+    another->capacity = onebak.capacity;
+    another->item_sizes = onebak.item_sizes;
+    another->offset = onebak.offset;
+
+    logger(
+            INFO, debug, __func__, __LINE__,
+            "StringVectors: %p and %p were swapped.",
+            one, another
+    );
+
+    logger(
+            INFO, debug, __func__, __LINE__,
+            "StringVector: %p old capacity: %li, new capacity: %li, \
+StringVector: %p old capacity: %li, new capacity: %li.",
+            one, another->capacity, one->capacity,
+            another, one->capacity, another->capacity
     );
 
     return true;

@@ -33,6 +33,7 @@ bool numeric_vector_copy(const NumericVector *source, NumericVector *destination
 bool numeric_vector_insert(NumericVector *vector, double value, size_t position);
 bool numeric_vector_replace(NumericVector *vector, size_t position, double new_value);
 bool numeric_vector_erase(NumericVector *vector, size_t start, size_t length);
+bool numeric_vector_swap(NumericVector *one, NumericVector *another);
 size_t numeric_vector_get_capacity(const NumericVector *vector);
 double numeric_vector_pop(NumericVector *vector);
 double numeric_vector_get_first(const NumericVector *vector);
@@ -51,6 +52,7 @@ bool string_vector_copy(const StringVector *source, StringVector *destination, b
 bool string_vector_insert(StringVector *vector, const char *value, size_t position);
 bool string_vector_replace(StringVector *vector, size_t position, const char *new_value);
 bool string_vector_erase(StringVector *vector, size_t start, size_t length);
+bool string_vector_swap(StringVector *one, StringVector *another);
 size_t string_vector_get_capacity(const StringVector *vector);
 char *string_vector_pop(StringVector *vector);
 const char *string_vector_get_first(const StringVector *vector);
