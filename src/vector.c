@@ -516,45 +516,20 @@ bool numeric_vector_swap(NumericVector *one, NumericVector *another)
         return false;
     }
 
-    logger(INFO, debug, __func__, __LINE__, "Backing up NumericVector: %p and %p items...", one, another);
+    logger(INFO, debug, __func__, __LINE__, "Swapping NumericVectors: %p and %p...", one, another);
 
-    NumericVector onebak = {0};
-    NumericVector anotherbak = {0};
+    NumericVector tmp = {0};
+    tmp.data = one->data;
+    tmp.capacity = one->capacity;
+    tmp.offset = one->offset;
 
-    if (!numeric_vector_copy(one, &onebak, true)) {
-        logger(
-                ERROR, true, __func__, __LINE__,
-                "Couldn't back up NumericVector: %p's items. Can't proceed.",
-                one
-        );
+    one->data = another->data;
+    one->capacity = another->capacity;
+    one->offset = another->offset;
 
-        numeric_vector_free(&onebak);
-        return false;
-    }
-
-    if (!numeric_vector_copy(another, &anotherbak, true)) {
-        logger(
-                ERROR, true, __func__, __LINE__,
-                "Couldn't back up NumericVector: %p's items. Can't proceed.",
-                another
-        );
-
-        numeric_vector_free(&onebak);
-        numeric_vector_free(&anotherbak);
-        return false;
-    }
-
-    logger(INFO, debug, __func__, __LINE__, "Swapping items held by NumericVector: %p and %p...", one, another);
-    numeric_vector_free(one);
-    numeric_vector_free(another);
-
-    one->data = anotherbak.data;
-    one->capacity = anotherbak.capacity;
-    one->offset = anotherbak.offset;
-
-    another->data = onebak.data;
-    another->capacity = onebak.capacity;
-    another->offset = onebak.offset;
+    another->data = tmp.data;
+    another->capacity = tmp.capacity;
+    another->offset = tmp.offset;
 
     logger(
             INFO, debug, __func__, __LINE__,
@@ -1358,47 +1333,23 @@ bool string_vector_swap(StringVector *one, StringVector *another)
         return false;
     }
 
-    logger(INFO, debug, __func__, __LINE__, "Backing up StringVector: %p and %p items...", one, another);
+    logger(INFO, debug, __func__, __LINE__, "Swapping StringVectors: %p and %p...", one, another);
 
-    StringVector onebak = {0};
-    StringVector anotherbak = {0};
+    StringVector tmp = {0};
+    tmp.data = one->data;
+    tmp.capacity = one->capacity;
+    tmp.item_sizes = one->item_sizes;
+    tmp.offset = one->offset;
 
-    if (!string_vector_copy(one, &onebak, true)) {
-        logger(
-                ERROR, true, __func__, __LINE__,
-                "Couldn't back up StringVector: %p's items. Can't proceed.",
-                one
-        );
+    one->data = another->data;
+    one->capacity = another->capacity;
+    one->item_sizes = another->item_sizes;
+    one->offset = another->offset;
 
-        string_vector_free(&onebak);
-        return false;
-    }
-
-    if (!string_vector_copy(another, &anotherbak, true)) {
-        logger(
-                ERROR, true, __func__, __LINE__,
-                "Couldn't back up StringVector: %p's items. Can't proceed.",
-                another
-        );
-
-        string_vector_free(&onebak);
-        string_vector_free(&anotherbak);
-        return false;
-    }
-
-    logger(INFO, debug, __func__, __LINE__, "Swapping items held by StringVector: %p and %p...", one, another);
-    string_vector_free(one);
-    string_vector_free(another);
-
-    one->data = anotherbak.data;
-    one->capacity = anotherbak.capacity;
-    one->item_sizes = anotherbak.item_sizes;
-    one->offset = anotherbak.offset;
-
-    another->data = onebak.data;
-    another->capacity = onebak.capacity;
-    another->item_sizes = onebak.item_sizes;
-    another->offset = onebak.offset;
+    another->data = tmp.data;
+    another->capacity = tmp.capacity;
+    another->item_sizes = tmp.item_sizes;
+    another->offset = tmp.offset;
 
     logger(
             INFO, debug, __func__, __LINE__,
