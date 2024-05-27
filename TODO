@@ -1,0 +1,2 @@
+Optimize StringVector's operations: Instead of copying item by item on some of its operations, just copy
+the address of the already allocated and occupied memory.
